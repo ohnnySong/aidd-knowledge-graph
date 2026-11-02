@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDD 知识图谱 · 投研版</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#1a2332; --sub:#5b6675; --line:#e3e7ee;
+    --accent:#2563eb; --green:#16a34a; --amber:#d97706; --red:#dc2626;
+    --green-bg:#ecfdf3; --amber-bg:#fffaeb; --red-bg:#fef2f2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);overflow:hidden}
+  header{display:flex;align-items:center;gap:16px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:17px;font-weight:700;white-space:nowrap}
+  header .ver{font-size:12px;color:var(--sub);white-space:nowrap}
+  #search{flex:1;min-width:200px;max-width:420px;padding:8px 14px;border:1px solid var(--line);border-radius:20px;font-size:14px;outline:none}
+  #search:focus{border-color:var(--accent)}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--sub);align-items:center}
+  .legend span{display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .dot.g{background:var(--green)} .dot.a{background:var(--amber)} .dot.r{background:var(--red)}
+  nav{display:flex;gap:4px;padding:8px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+  nav button{border:none;background:none;padding:7px 16px;font-size:13.5px;border-radius:8px;cursor:pointer;color:var(--sub)}
+  nav button.on{background:var(--accent);color:#fff;font-weight:600}
+  main{height:calc(100vh - 108px);overflow:auto}
+  /* ---- swimlanes ---- */
+  #lanes{display:flex;gap:14px;padding:18px 20px;align-items:flex-start;min-width:max-content}
+  .lane{width:308px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .lane.hot{border-top:4px solid var(--accent)}
+  .lane h2{font-size:15px;margin-bottom:2px}
+  .lane .task{font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.5}
+  .group{margin-bottom:12px}
+  .group h3{font-size:12px;color:var(--accent);margin-bottom:6px;font-weight:600}
+  .node{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;background:#fbfcfe;transition:all .12s}
+  .node:hover{border-color:var(--accent);box-shadow:0 1px 4px rgba(37,99,235,.15)}
+  .node.sel{border-color:var(--accent);background:#eff4ff}
+  .node.dim{opacity:.25}
+  .node .nm{font-size:13px;font-weight:600;line-height:1.35}
+  .node .sub{font-size:11px;color:var(--sub);line-height:1.3}
+  /* ---- drawer ---- */
+  #drawer{position:fixed;top:0;right:-480px;width:460px;max-width:92vw;height:100vh;background:var(--panel);box-shadow:-4px 0 24px rgba(0,0,0,.12);transition:right .25s ease;z-index:50;display:flex;flex-direction:column}
+  #drawer.open{right:0}
+  #drawer .dhead{padding:18px 20px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  #drawer h2{font-size:18px;line-height:1.4}
+  #drawer .dsub{font-size:12.5px;color:var(--sub);margin-top:4px}
+  #close{border:none;background:none;font-size:22px;cursor:pointer;color:var(--sub);line-height:1}
+  #drawer .dbody{padding:16px 20px;overflow:auto;flex:1}
+  .badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:12px;font-weight:600;margin:2px 0 12px}
+  .badge.g{background:var(--green-bg);color:var(--green)}
+  .badge.a{background:var(--amber-bg);color:var(--amber)}
+  .badge.r{background:var(--red-bg);color:var(--red)}
+  .field{margin-bottom:14px}
+  .field h4{font-size:12px;color:var(--accent);margin-bottom:4px;letter-spacing:.05em}
+  .field p{font-size:13.5px;line-height:1.75;color:#2c3646}
+  .field.formula{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto}
+  .field.formula h4{margin-bottom:6px}
+  /* ---- tables ---- */
+  .tablewrap{padding:24px;max-width:1100px}
+  table{border-collapse:collapse;width:100%;background:var(--panel);font-size:13px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;line-height:1.6}
+  th{background:#f1f5fb;font-weight:600}
+  /* ---- formula list ---- */
+  #formulaview{padding:24px;max-width:900px}
+  .fcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px}
+  .fcard h3{font-size:14px;margin-bottom:8px}
+  .fcard .used{font-size:12px;color:var(--sub);margin-top:8px}
+  .empty{padding:60px;text-align:center;color:var(--sub)}
+  @media (max-width:760px){ #drawer{width:100vw} }
+</style>
+</head>
+<body>
+<header>
+  <h1>AIDD 知识图谱</h1>
+  <span class="ver">投研版 · 数据截至 2026.11 · 56 个模型节点</span>
+  <input id="search" placeholder="搜索模型 / 公司 / 关键词，如 AlphaFold、Recursion、亲和力…">
+  <div class="legend">
+    <span><i class="dot g"></i>学术验证</span>
+    <span><i class="dot a"></i>工业落地</span>
+    <span><i class="dot r"></i>有分子进临床</span>
+  </div>
+</header>
+<nav>
+  <button class="on" data-view="graph">图谱</button>
+  <button data-view="companies">公司速查</button>
+  <button data-view="formulas">公式总览</button>
+</nav>
+<main id="main"></main>
+<aside id="drawer">
+  <div class="dhead">
+    <div><h2 id="dTitle"></h2><div class="dsub" id="dSub"></div></div>
+    <button id="close">×</button>
+  </div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+<script>
+/* ============ 数据：与 aidd_knowledge_graph_draft.md 内容一致 ============ */
+const FORMULAS = {
+  F1:{t:'注意力机制', tex:'\\mathrm{Attention}(Q,K,V) = \\mathrm{softmax}\\left(\\frac{QK^{\\top}}{\\sqrt{d_k}}\\right)V', used:'AlphaFold / 各类 Transformer 主干'},
+  F2:{t:'GNN 消息传递', tex:'h_v^{(k+1)} = \\mathrm{UPDATE}\\left(h_v^{(k)},\\ \\mathrm{AGGREGATE}\\left(\\{h_u^{(k)} : u \\in \\mathcal{N}(v)\\}\\right)\\right)', used:'Chemprop / 分子性质预测 / DTI'},
+  F3:{t:'扩散模型前向加噪', tex:'q(x_t \\mid x_{t-1}) = \\mathcal{N}\\left(\\sqrt{1-\\beta_t}\\, x_{t-1},\\ \\beta_t \\mathbf{I}\\right)', used:'AlphaFold3 / RFdiffusion / DiffSBDD'},
+  F4:{t:'扩散模型去噪目标（简化得分匹配）', tex:'\\mathcal{L} = \\mathbb{E}_{t, x_0, \\epsilon}\\left[\\ \\lVert \\epsilon - \\epsilon_\\theta\\left(\\sqrt{\\bar\\alpha_t}\\,x_0 + \\sqrt{1-\\bar\\alpha_t}\\,\\epsilon,\\ t\\right) \\rVert^2\\ \\right]', used:'AlphaFold3 / RFdiffusion / DiffSBDD'},
+  F5:{t:'VAE 证据下界（ELBO）', tex:'\\mathcal{L}_{\\mathrm{ELBO}} = \\mathbb{E}_{q_\\phi(z\\mid x)}[\\log p_\\theta(x \\mid z)] - D_{\\mathrm{KL}}\\left(q_\\phi(z \\mid x)\\,\\Vert\\,p(z)\\right)', used:'早期分子生成 / 潜空间优化'},
+  F6:{t:'强化学习策略梯度', tex:'\\nabla_\\theta J(\\theta) = \\mathbb{E}_{x \\sim \\pi_\\theta}\\left[\\,R(x)\\, \\nabla_\\theta \\log \\pi_\\theta(x)\\,\\right]', used:'REINVENT 定向分子生成'},
+  F7:{t:'贝叶斯优化采集函数（EI）', tex:'\\mathrm{EI}(x) = \\mathbb{E}\\left[\\max\\left(0,\\ f(x) - f(x^+)\\right)\\right]', used:'主动学习闭环 / 工艺优化'},
+  F8:{t:'结合自由能与亲和力', tex:'\\Delta G_{\\mathrm{bind}} = -RT \\ln K_d', used:'对接打分 / FEP 的物理基础'},
+  F9:{t:'自由能微扰 Zwanzig 公式', tex:'\\Delta G_{A \\to B} = -k_B T \\ln \\left\\langle \\exp\\left(-\\frac{U_B - U_A}{k_B T}\\right) \\right\\rangle_A', used:'FEP+ 核心'},
+  F10:{t:'掩码语言模型目标', tex:'\\mathcal{L}_{\\mathrm{MLM}} = -\\sum_{i \\in \\mathcal{M}} \\log p_\\theta\\left(x_i \\mid x_{\\setminus \\mathcal{M}}\\right)', used:'ESM / Evo / 蛋白与基因组语言模型'},
+  F11:{t:'知识图谱嵌入（TransE）', tex:'\\mathbf{h} + \\mathbf{r} \\approx \\mathbf{t}, \\qquad \\mathcal{L} = \\sum \\max\\left(0,\\ \\gamma + d(\\mathbf{h}+\\mathbf{r}, \\mathbf{t}) - d(\\mathbf{h}^{\\prime}+\\mathbf{r}, \\mathbf{t}^{\\prime})\\right)', used:'靶点发现 / 老药新用'}
+};
+const MAT = {1:{c:'g',label:'学术验证'},2:{c:'a',label:'工业落地'},3:{c:'r',label:'有分子进临床'}};
+const STAGES = [
+{id:1, name:'① 靶点发现与验证', en:'Target Discovery', task:'从组学 / 文献 / 表型数据里找可成药靶点', hot:false, groups:[
+ {g:'范式 A · 生物医学知识图谱', nodes:[
+  {n:'KG 嵌入推理（TransE / RotatE 类）', s:'', m:2, mn:'工业落地',
+   u:'把基因-疾病-通路-药物建成图谱，用嵌入向量推理"基因 X 与疾病 Y 存在未被报道的关联"，产出候选靶点排序。',
+   co:'BenevolentAI（经典案例：2020 年用知识图谱把巴瑞替尼定位为 COVID-19 候选，后被 RCT 证实）、英矽智能 PandaOmics 的图谱模块',
+   lim:'热门靶点背后的学术论文扎堆，冷门靶点难以发觉。对 OOD 靶点的发掘能力弱。反映的只是关联，因果性弱，A 导致 B 可能实际上由第三个因子驱动。', f:['F11']}]},
+ {g:'范式 B · 蛋白 / 基因语言模型', nodes:[
+  {n:'ESM2 / ESMFold', s:'Meta，2022–2023', m:2, mn:'工业落地（已并入各家公司流程）',
+   u:'从蛋白序列直接学功能特征：突变效应预测（零样本判断某突变是否致病）、不需要多序列对比。',
+   co:'Meta 开源，被广泛使用；EvolutionaryScale（ESM3 开发方）2025 年 11 月被 CZ Biohub 收购',
+   lim:'单序列信息有限，对复合物 / 动态构象无能为力。', f:['F10']},
+  {n:'ESM3', s:'EvolutionaryScale，2024', m:1, mn:'学术验证偏工业落地',
+   u:'多模态蛋白语言模型（序列+结构+功能联合建模），可生成全新功能蛋白（代表作为 esmGFP）。', co:'',
+   lim:'生成蛋白的药物级验证案例仍少。', f:['F10']},
+  {n:'Evo 2', s:'Arc Institute，2025', m:1, mn:'学术验证',
+   u:'基因组语言模型，"读写 DNA"：预测突变致病性、设计基因调控元件。', co:'',
+   lim:'从序列到表型的链条太长，成药决策价值待证。', f:['F10']}]},
+ {g:'范式 C · 单细胞基础模型与虚拟细胞', nodes:[
+  {n:'scGPT / Geneformer / scFoundation', s:'2023–2024', m:1, mn:'学术验证（2025–2026 年多篇评测指出零样本能力有限，常打不过线性基线）',
+   u:'单细胞转录组基础模型：细胞类型注释、扰动响应预测、从患者组织数据找疾病相关细胞亚群，再反推靶点。', co:'',
+   lim:'最近有不少第三方测评指出，虚拟细胞大模型在几个任务上不如最简单的线性回归。用模型没见过的细胞来测，效果大幅缩水。', f:['F1']},
+  {n:'State', s:'Arc Institute，2025.6', m:1, mn:'学术验证，Arc 官方称是首个稳定超过线性基线的扰动预测模型',
+   u:'虚拟细胞模型：给定细胞状态+扰动（药物 / 基因敲除），预测转录组变化。训练数据超 1 亿细胞扰动数据（Tahoe-100M 等）。', co:'',
+   lim:'只对 RNA 层面进行扰动建模，下游蛋白质、代谢物无法建模；2026 Virtual Cell Challenge 显示跨细胞泛化仍未解决。', f:['F1']},
+  {n:'X-Cell', s:'Xaira，2026', m:1, mn:'学术验证',
+   u:'同类虚拟细胞模型，2560 万 CRISPRi 扰动细胞训练；重要发现：泛化瓶颈在"扰动×细胞环境组合数"。', co:'',
+   lim:'公司未上市且无临床分子，技术路线值得跟踪但不能作为投资标的直接映射。', f:['F1']}]},
+ {g:'范式 D · 多组学+临床数据靶点挖掘', nodes:[
+  {n:'PandaOmics', s:'Insilico', m:3, mn:'有分子进临床（且已有 II 期疗效数据）',
+   u:'组学+文献+临床试验数据融合，输出靶点打分。最硬证据：TNIK 靶点由其发现，产出 rentosertib，2025 年 6 月 Nature Medicine 发表 IIa 期阳性结果（60mg 组 FVC +98.4 mL vs 安慰剂组下降），是全球首个 AI 发现靶点+AI 设计分子双标签的临床疗效验证。',
+   co:'Insilico Medicine（2025 年 12 月港股上市，IPO 募资 22.77 亿港元，市值约 207 亿港元）',
+   lim:'只有这一个成功案例。', f:[]}]},
+ {g:'范式 E · 表型组学与 GWAS+ML', nodes:[
+  {n:'表型组学靶点发现', s:'Recursion OS 类', m:3, mn:'有分子进临床（REC-4881 等多个管线来自表型筛选）',
+   u:'高通量细胞成像（Cell Painting）+ 深度学习，从形态学表型反推基因-疾病关系。',
+   co:'Recursion（RXRX）',
+   lim:'表型筛选关联到发掘可成药靶点之间还差很多；AI 提高的是发现端的效率和命中率，但无法保证临床成功。公司 2025 年 5 月砍掉了 3 个临床项目。', f:[]},
+  {n:'人类遗传学靶点优先级评分', s:'Open Targets 类 + 各家私有实现', m:2, mn:'工业落地（大药企标配）',
+   u:'GWAS / 罕见病突变证据加权，筛"有人体遗传学背书"的靶点（此类靶点临床成功率约为 2 倍）。',
+   co:'Tempus（TEM，多模态患者数据平台）、各大药企内部团队',
+   lim:'数据公开、差异化小，很难构成独家壁垒。', f:[]}]}
+]},
+{id:2, name:'② 苗头 / 先导化合物发现', en:'Hit / Lead Discovery', task:'结构预测、分子对接、虚拟筛选、分子生成（主战场）', hot:true, groups:[
+ {g:'范式 A · 结构预测基础模型', nodes:[
+  {n:'AlphaFold 2', s:'DeepMind，2021', m:2, mn:'工业落地（2024 诺贝尔化学奖：Baker、Hassabis、Jumper）',
+   u:'单链蛋白结构预测，原子级精度；AlphaFold DB 已预测 2 亿+ 结构，让"无结构靶点"大幅减少。',
+   co:'DeepMind 开源；全行业使用',
+   lim:'静态单构象，不预测结合口袋开闭与动态；抗体-抗原复合物精度差。', f:['F1']},
+  {n:'AlphaFold 3', s:'DeepMind / Isomorphic，2024.5', m:2, mn:'工业落地（2024.11 开放推理代码与非商业权重；商用受限）',
+   u:'用扩散架构统一预测蛋白+核酸+小分子+离子的复合物结构；蛋白-配体复合物精度较传统对接工具提升 50% 以上。',
+   co:'Isomorphic Labs（与礼来、诺华、强生合作，潜在里程金合计数十亿美元；2026.5 完成 $21 亿 B 轮）',
+   lim:'AF3 刚发 Nature 时没有开源，催生了开源替代品，削弱了商业壁垒；只能输出结构预测，无法输出结合自由能以及结合得牢不牢。', f:['F1','F3','F4']},
+  {n:'Boltz-1 / Boltz-2', s:'MIT Jameel Clinic，2024.11 / 2025.6', m:2, mn:'工业落地（Recursion 参与共建）',
+   u:'AF3 级精度的全开源（MIT 协议，可商用）复合物结构预测；Boltz-2 增加结合亲和力预测头，单 GPU 约 20 秒出结构+亲和力，官方 benchmark 称接近 FEP 精度、速度快 1000 倍。',
+   co:'Recursion（共建方）；任何公司可免费用',
+   lim:'亲和力预测准不准，跟 benchmark 和化学型强相关，换个体系就得重新验证。出来的姿态还得过 PoseBusters 这类物理合法性检查才能用。', f:['F1','F3','F4']},
+  {n:'Chai-1', s:'Chai Discovery，2024.9', m:2, mn:'工业落地（OpenAI、Thrive 投资；2026 年与礼来、辉瑞、诺华签约）',
+   u:'AF3 级开源（Apache-2.0）复合物预测，支持质谱、表位图谱等实验约束作为条件输入；单序列模式不依赖 MSA。',
+   co:'Chai Discovery（私企，无临床分子，按口径不展开）',
+   lim:'跟 AF3 一个问题：结构看得准，但结合得牢不牢、构象怎么动，得另外配模型。', f:['F1','F3','F4']},
+  {n:'Protenix', s:'字节跳动，2025', m:1, mn:'学术验证',
+   u:'AF3 的 Apache-2.0 PyTorch 开源复现。',
+   co:'字节跳动（非药企，平台方）',
+   lim:'本质是复现，手里没有独有数据，谈不上壁垒。', f:['F1','F3','F4']},
+  {n:'IsoDDE', s:'Isomorphic Labs，2026.2', m:2, mn:'工业落地（仅内部使用+授权礼来/诺华/强生）',
+   u:'统一药物设计引擎，官方技术报告称在与训练集差异大的蛋白-药物对上精度较 AF3 翻倍；可仅凭序列发现隐藏结合口袋。',
+   co:'Isomorphic Labs',
+   lim:'精度翻倍是公司自己报告里说的，没过同行评审。模型不卖，想在二级市场沾这个能力只能买 Alphabet。', f:['F1','F3','F4']}]},
+ {g:'范式 B · 分子对接与虚拟筛选', nodes:[
+  {n:'DiffDock / DiffDock-L', s:'MIT，2023/2024', m:1, mn:'学术验证',
+   u:'等变扩散模型做蛋白-配体姿态采样（blind docking），取代传统采样+打分两步。', co:'',
+   lim:'有个经典坑：原版 DiffDock 在 PoseBusters 上只有 12% 的姿态同时位置准、物理上站得住，Vina 是 58%，GOLD 55%。实际用的时候后面必须接 GNINA 重打分加物理检查。', f:['F3','F4']},
+  {n:'GNINA', s:'CNN 打分，2021+', m:2, mn:'工业落地（开源）',
+   u:'传统对接采样 + 3D CNN 重打分的混合工作流，是当前可审计的生产级方案。', co:'',
+   lim:'CNN 打分换一类化学骨架就得重新校准，不能一套参数通吃。', f:[]},
+  {n:'Glide + FEP 传统物理工作流', s:'Schrödinger', m:3, mn:'有分子进临床（Schrödinger 自有管线；Nimbus 用其 FEP 优化的 TYK2 抑制剂以 $40 亿卖给武田，2026 年已获 FDA 优先审评）',
+   u:'物理基对接与打分，行业金标准基线；评估任何 AI 对接模型都应对照它。',
+   co:'Schrödinger（SDGR）',
+   lim:'又慢又贵，license 费也不便宜。AI 模型的替代空间恰恰在这里。', f:['F8','F9']},
+  {n:'AtomNet', s:'Atomwise', m:2, mn:'工业落地',
+   u:'3D 卷积网络做超大规模虚拟筛选（十亿级库）。',
+   co:'Atomwise（私企；早期明星，近年声量减弱）',
+   lim:'筛得准不代表临床能成。公司自己推的分子，到现在没有一个走到后期临床。', f:[]}]},
+ {g:'范式 C · 分子生成', nodes:[
+  {n:'Chemistry42', s:'Insilico', m:3, mn:'有分子进临床（rentosertib ISM001-055 已进入 III 期，全球首个 AI 全程发现+设计药物）',
+   u:'30+ 生成模型（GAN / VAE / RL / 扩散）集成分子生成平台，支持结构基与配体基生成。',
+   co:'Insilico Medicine',
+   lim:'平台内部怎么组合模型，外人看不到，也没法拆开验证每个模块各出了多少力。', f:['F4','F5','F6']},
+  {n:'REINVENT', s:'强化学习分子生成', m:2, mn:'工业落地（开源，阿斯利康等在用）',
+   u:'RNN 先验 + 策略梯度强化学习，朝多目标打分函数定向生成（活性+ADMET+可合成性）。', co:'',
+   lim:'模型会钻打分函数的空子（reward hacking），生成一批分数漂亮但根本合成不出来的分子。', f:['F6']},
+  {n:'结构基扩散生成（DiffSBDD / Pocket2Mol / TargetDiff）', s:'2022–2024', m:1, mn:'学术验证',
+   u:'以蛋白口袋三维结构为条件，扩散模型直接在口袋内生成 3D 分子。', co:'',
+   lim:'生成的分子多半要卡在合成难度和物理合法性这两道筛子上。湿实验命中率有多少，公开数据很少。', f:['F3','F4']},
+  {n:'VAE 系分子生成（JT-VAE / MoLeR 等）', s:'2018–2022', m:2, mn:'工业落地（已被扩散模型部分取代，但潜空间+贝叶斯优化路线仍在用）',
+   u:'早期主力：把分子编码进连续潜空间做插值与优化（配 ELBO 目标）。', co:'',
+   lim:'生成有效率不高，化学多样性也有限。现在基本退居二线，主要当潜空间优化的框架用。', f:['F5']}]},
+ {g:'范式 D · 配体基性质 / 活性预测（QSAR）', nodes:[
+  {n:'Chemprop（D-MPNN）', s:'', m:2, mn:'工业落地（开源）',
+   u:'消息传递神经网络直接从分子图学性质 / 活性，是学术与工业界最常用的 QSAR 基线。', co:'',
+   lim:'有一点要留意：在 TDC ADMET benchmark 上，指纹加梯度提升树这种老办法在好几个任务上都不输深度模型。看公司宣传时拿这个当锚。', f:['F2']},
+  {n:'Uni-Mol', s:'深势科技 / 微软研究院，2022', m:2, mn:'工业落地',
+   u:'3D 分子表征预训练框架，下游接性质预测、构象生成、对接打分。',
+   co:'深势科技（私企，工具平台型，按口径不展开）',
+   lim:'上限取决于输入的 3D 构象质量，构象给错了后面全错。', f:['F2']}]}
+]},
+{id:3, name:'③ 先导优化', en:'Lead Optimization', task:'亲和力 / 选择性 / 成药性多参数优化', hot:true, groups:[
+ {g:'范式 A · 自由能计算与亲和力预测', nodes:[
+  {n:'FEP+', s:'Schrödinger，物理方法+ML 加速', m:3, mn:'有分子进临床（Nimbus TYK2 → 武田 zasocitinib，$40 亿交易；Schrödinger 自有管线多个临床分子）',
+   u:'自由能微扰计算相对结合自由能，先导优化的"金标准"，精度约 1 kcal/mol。',
+   co:'Schrödinger（SDGR）、Nimbus（私企，zasocitinib 已进入 NDA 优先审评）',
+   lim:'算一个分子要小时级算力，没法拿去做大规模筛选。Boltz-2 这类模型切的就是这个空档。', f:['F8','F9']},
+  {n:'Boltz-2 亲和力模块', s:'2025.6', m:2, mn:'工业落地早期',
+   u:'FEP 的第一遍廉价替代：hit 分类用 affinity_probability_binary，hit-to-lead 排序用 affinity_pred_value；头部 1% 再交给 FEP / 实验确认。',
+   co:'Recursion（共建）',
+   lim:'遇到 PROTAC、大环、多肽这类新骨架就出了训练域，误差明显变大。用之前先查 applicability domain。', f:['F8']}]},
+ {g:'范式 B · 主动学习 / 贝叶斯优化闭环', nodes:[
+  {n:'贝叶斯优化 + 主动学习闭环', s:'Lab-in-the-loop', m:2, mn:'工业落地',
+   u:'每轮选"信息价值最高"的分子送湿实验，用最少实验次数收敛到最优分子；文献案例：约 500 个变体 4 轮迭代把酶活提升 16–26 倍。',
+   co:'晶泰科技 XtalPi（2228.HK，"AI+机器人"干湿闭环；2025 年 11 月与礼来达成 $3.45 亿双抗合作，继 2023 年 $2.5 亿小分子合作后再携手）',
+   lim:'闭环转多快取决于湿实验通量，算法不是瓶颈。纯软件公司抄不走这套东西，真正难抄的是自动化实验室。', f:['F7']}]},
+ {g:'范式 C · 逆合成规划', nodes:[
+  {n:'Retro* / ASKCOS / AiZynthFinder', s:'', m:2, mn:'工业落地',
+   u:'树搜索+神经网络预测合成路线，评估生成出的分子"做不做得出来、几步、多少钱"。', co:'',
+   lim:'预测的路线跟实际产率、纯化难度经常对不上。它的价值更多是给分子生成模型当下游筛子。', f:[]}]},
+ {g:'范式 D · 多参数优化（MPO）', nodes:[
+  {n:'Exscientia 精确化学平台', s:'已并入 Recursion', m:3, mn:'有分子进临床（DSP-1181 是史上首个进入人体的 AI 设计分子，2020 年；Exscientia 2024 年 11 月被 Recursion 以 $6.88 亿全股票收购）',
+   u:'活性+选择性+ADMET+可合成性多目标同时优化的生成式设计。',
+   co:'Recursion（RXRX，合并后实体）',
+   lim:'DSP-1181 后来被住友终止，EXS21546 因治疗窗问题 2023 年下马，BMS 2025 年 10 月砍掉了合作里的 PKC-θ 抑制剂。进临床和能成药是两回事，这家公司也没能跨过去。', f:['F6']}]},
+ {g:'范式 E · 大分子 / 抗体设计（另一主战场）', nodes:[
+  {n:'ProteinMPNN', s:'Baker Lab，2022', m:2, mn:'工业落地（开源，几乎所有蛋白设计公司都在用）',
+   u:'逆折叠：给定骨架结构反推氨基酸序列（"结构→序列"），是蛋白设计流水线的标配组件。', co:'',
+   lim:'只负责从骨架推序列，骨架本身它生成不了。', f:[]},
+  {n:'RFdiffusion', s:'Baker Lab，2023 Nature', m:3, mn:'有分子进临床（Generate、Xaira 的技术底座；2025 年 11 月 Nature 发表原子级精度从头抗体设计）',
+   u:'在结构空间做扩散，从头生成蛋白骨架：结合子、酶、对称组装体；几小时生成靶向病毒表位的抗体结构。',
+   co:'Generate Biomedicines（2026 年 2 月纳斯达克 IPO 募资 $4 亿）、Xaira（私企无临床分子，不展开）',
+   lim:'骨架画得好，不等于序列折得对，更不等于有功能。中间要过 ProteinMPNN 和 AF2 好几道筛，最后湿实验命中率也就个位数百分比。', f:['F3','F4']},
+  {n:'Chroma', s:'Generate Biomedicines', m:3, mn:'有分子进临床（GB-0895 抗 TSLP 长效抗体 2025 年 12 月启动两项全球 III 期，约 1600 人、40+ 国家，全球首个 AI 设计抗体进 III 期，从分子合成到 III 期仅 4 年；GB-0669 新冠预防抗体 I 期安全性数据 2025 年读出）',
+   u:'生成式蛋白设计平台：按功能条件生成抗体 / 酶 / 多肽。',
+   co:'Generate Biomedicines（已上市）',
+   lim:'III 期数据还没读出来，疗效这道坎还没过。', f:['F3','F4']},
+  {n:'Chai-2', s:'Chai Discovery，2025', m:1, mn:'学术验证偏工业落地（preprint）',
+   u:'零样本抗体设计：24 孔板规模实验，官方报告命中率接近 20%（较传统方法约百倍提升）。', co:'',
+   lim:'20% 命中率要看基线怎么定、靶点难度怎么分布。数据是公司自己发的 preprint，没过同行评审。', f:[]},
+  {n:'PepMLM', s:'2025.8 Nature Biotech 报道', m:1, mn:'学术验证',
+   u:'蛋白语言模型微调生成线性多肽，无需结构信息即可设计靶向"不可成药"靶点的多肽降解剂。', co:'',
+   lim:'多肽的稳定性、透膜性这些成药性老问题，它管不了。', f:['F10']},
+  {n:'tFold-Ab / tFold-Ag', s:'腾讯，2025.11 Nature Communications', m:1, mn:'学术验证偏工业落地',
+   u:'抗体结构预测+抗原复合物建模+表位特异性从头设计一体化；抗 PD-L1 设计抗体亲和力达 45 pM。',
+   co:'腾讯（平台方，非药企）',
+   lim:'目前只有论文级验证，还没看到往临床推的分子。', f:[]},
+  {n:'BoltzGen', s:'MIT，2025.11', m:1, mn:'学术验证',
+   u:'Boltz 框架上的蛋白生成模型：针对指定生物靶点生成可结合蛋白。', co:'',
+   lim:'刚发布，还没有第三方独立验证。', f:[]}]}
+]},
+{id:4, name:'④ ADMET 与临床前', en:'Preclinical', task:'吸收代谢毒性预测、表型验证', hot:true, groups:[
+ {g:'范式 A · 分子性质预测（QSAR / GNN / 指纹）', nodes:[
+  {n:'TDC 基准体系', s:'Therapeutics Data Commons', m:2, mn:'工业落地（作为评测标准）',
+   u:'不是模型而是标尺：22 个 ADMET 端点（Caco-2 渗透、hERG 心脏毒性、DILI 肝损伤、CYP 抑制、清除率等）的标准化评测，是判断任何 ADMET 模型宣传的基准。', co:'',
+   tip:'碰到宣称 ADMET 预测做到 SOTA 的公司，先问它 TDC scaffold split 上跑了多少分。', f:[]},
+  {n:'指纹 + 梯度提升树（ECFP+XGBoost）', s:'', m:2, mn:'工业落地（药企标配）',
+   u:'ADMET 预测的"朴素基线"，2025 年研究仍在 TDC 多个任务上打平或超过深度模型。', co:'',
+   lim:'出了已知骨架就外推不动。',
+   tip:'这个环节里深度模型对老办法的优势，比宣传的小得多。', f:[]},
+  {n:'多任务 D-MPNN', s:'Chemprop 多任务版等', m:2, mn:'工业落地',
+   u:'跨 ADMET 端点共享表征，低数据端点（如 CYP2C9、hERG）靠知识迁移提升。', co:'',
+   lim:'多任务的好处主要体现在数据少的端点上，数据多的端点提升有限。', f:['F2']},
+  {n:'ADMETlab 3.0 / 类似集成平台', s:'', m:2, mn:'工业落地（开源 / 免费）',
+   u:'一站式 ADMET 预测 Web 平台，几十个端点批量预测。', co:'',
+   lim:'只用公开数据训练，到了药企私有数据上精度会系统性打折。', f:[]}]},
+ {g:'范式 B · 表型验证与毒理', nodes:[
+  {n:'高通量表型筛选', s:'Recursion 自动化湿实验平台', m:3, mn:'有分子进临床（多个管线）',
+   u:'机器人实验室+Cell Painting 成像，直接在细胞水平验证毒性与脱靶，喂回 AI 模型形成闭环。',
+   co:'Recursion（自建 BioHive-2 超算，H100 集群）',
+   lim:'从细胞表型推到人体毒性，全行业都还没解决好。这套玩法的资本开支也极重。', f:[]},
+  {n:'虚拟细胞预测毒性响应', s:'State / GEARS / CPA 类', m:1, mn:'学术验证（GEARS/CPA 在单基因扰动上可用；跨细胞系泛化 2026 年仍是挑战赛题目）',
+   u:'用扰动响应模型预测候选分子的细胞级副作用，前置动物实验。', co:'',
+   lim:'转录组只是个替代终点，它和真实毒性的相关性还没有确证。', f:['F1']}]},
+ {g:'范式 C · 转化建模', nodes:[
+  {n:'PBPK + ML 混合建模', s:'', m:2, mn:'工业落地（大药企标配，Simcyp / GastroPlus 集成 ML）',
+   u:'生理药代动力学模型用 ML 预测参数（清除率、分布容积），做种属外推和首人体剂量预测。', co:'',
+   lim:'监管认的是传统 PBPK，里面加的 ML 组件得一个一个单独论证。', f:[]}]}
+]},
+{id:5, name:'⑤ 临床试验', en:'Clinical', task:'患者分层招募、数字孪生、终点预测', hot:false, groups:[
+ {g:'范式 A · 数字孪生 / 合成对照', nodes:[
+  {n:'Unlearn TwinRCT', s:'', m:2, mn:'工业落地中监管认可最高：2022 年 9 月获 EMA 正面资格认定意见，方法学与 FDA 指南一致',
+   u:'为每个受试者生成"如果进安慰剂组"的数字孪生预后预测，作为协变量调整，同等统计效力下缩小对照组（阿尔茨海默病方向报告可减少 33% 对照组样本量）。',
+   co:'Unlearn.AI（私企；大客户为顶级药企）',
+   lim:'它提高的是统计效率，不是拿假人替真人做试验。而且只在历史数据够多的适应症里玩得转。', f:[]},
+  {n:'TWIN-GPT', s:'学术，2024', m:1, mn:'学术验证',
+   u:'LLM 生成患者级时间序列数字孪生，模拟反事实治疗轨迹。', co:'',
+   lim:'合成数据保不保得住因果关系，验证方法还不成熟。', f:['F1']}]},
+ {g:'范式 B · 患者招募与分层', nodes:[
+  {n:'EHR-NLP 招募匹配', s:'TrialGPT / Deep 6 AI / Antidote 类', m:2, mn:'工业落地',
+   u:'用 NLP 解析病历与入排标准做自动匹配；行业报告筛查准确率提升约 70%，招募周期缩短数月。',
+   co:'Deep 6 AI（私企）、Tempus（TEM，肿瘤真实世界数据+分子分型匹配是其核心业务）',
+   lim:'病历数据质量参差不齐，监管和隐私合规会拖住扩张速度。', f:[]},
+  {n:'多模态患者分层', s:'Tempus 类', m:2, mn:'工业落地（Tempus 为美国最大临床分子数据平台）',
+   u:'基因组+影像+病历多模态模型分层患者、预测疗效，服务伴随诊断与富集设计。',
+   co:'Tempus（TEM）',
+   lim:'值钱的是数据量，不是哪个单独的模型。护城河就是数据规模。', f:[]}]},
+ {g:'范式 C · 试验结果预测', nodes:[
+  {n:'InClinico', s:'Insilico', m:1, mn:'学术验证（有验证论文）',
+   u:'多模态模型预测 II 期→III 期转化成功率，用于管线决策与 BD 尽调。',
+   co:'Insilico Medicine',
+   lim:'回测的 AUC 再好看，也覆盖不了监管和试验执行里那些偶发翻车。', f:[]}]},
+ {g:'范式 D · 影像与数字终点', nodes:[
+  {n:'医学影像基础模型', s:'病理 WSI / 放射组学', m:2, mn:'工业落地（伴随诊断方向）',
+   u:'病理全切片基础模型做疗效评估、生物标志物发现（如 Mayo / Aignostics 的 ATLAS，120 万张切片训练）。', co:'',
+   lim:'拿来做药物研发的因果归因偏弱，实际用途更多在诊断和患者分层。', f:[]}]}
+]},
+{id:6, name:'⑥ 上市后与扩展', en:'Post-market / Repurposing / CMC', task:'老药新用、联用、工艺优化', hot:false, groups:[
+ {g:'范式 A · 老药新用', nodes:[
+  {n:'TxGNN', s:'哈佛，2023', m:1, mn:'学术验证',
+   u:'图神经网络在生物医学知识图谱上做零样本药物重定位，覆盖罕见病。', co:'',
+   lim:'图谱上挖出的关联离临床验证还很远。巴瑞替尼治 COVID 是正面案例（知识图谱提出，RCT 证实），但这种运气是少数。', f:['F2','F11']},
+  {n:'真实世界证据 NLP', s:'Aetion / Tempus RWE 类', m:2, mn:'工业落地',
+   u:'从医保理赔+EHR 数据挖掘适应症外疗效信号。', co:'',
+   lim:'可信度全看混杂因素控制得怎么样，方法学争议一直没停。', f:[]}]},
+ {g:'范式 B · 联合用药', nodes:[
+  {n:'DeepSynergy / 组合预测模型', s:'', m:1, mn:'学术验证',
+   u:'预测药物联用协同 / 拮抗，设计联合方案（肿瘤为主）。', co:'',
+   lim:'细胞系上看到的协同，转到临床的比例很低。', f:[]}]},
+ {g:'范式 C · CMC 与工艺优化', nodes:[
+  {n:'贝叶斯优化 + DoE 工艺开发', s:'', m:2, mn:'工业落地（大药企内部）',
+   u:'发酵 / 纯化 / 结晶工艺参数优化，减少实验批次；基因治疗平台化 CMC 数据复用被 Nature Biotech 评论为降本提速关键路径。', co:'',
+   lim:'数据都在公司内部，没有公开 benchmark，外人验证不了效果。', f:['F7']}]},
+ {g:'范式 D · 药物警戒', nodes:[
+  {n:'PV-NLP', s:'不良反应信号挖掘', m:2, mn:'工业落地（监管机构也在用）',
+   u:'NLP 从文献、社媒、自发报告系统（FAERS）挖掘不良反应信号。', co:'',
+   lim:'信噪比低，只能用来发现信号，是不是真因果还得人工判断。', f:[]}]}
+]}
+];
+const COMPANIES = [
+ ['Insilico Medicine（英矽智能）','港股 2025.12 上市','①②③⑤ 全链条','rentosertib IIa 阳性（Nature Medicine 2025.6），已进 III 期'],
+ ['Recursion（含 Exscientia）','美股 RXRX','①②③④','REC-4881 II 期（FAP 息肉负荷降 43–53%）；Exscientia DSP-1181 史上首个 AI 设计分子进临床'],
+ ['Schrödinger','美股 SDGR','②③','Nimbus TYK2（FEP+ 优化）→ 武田 zasocitinib 获 FDA 优先审评'],
+ ['Relay Therapeutics','美股 RLAY','②③','RLY-2608 III 期（乳腺癌，PFS 9.2 个月）'],
+ ['Generate Biomedicines','纳斯达克 2026.2 上市','③（大分子）','GB-0895 抗 TSLP III 期，全球首个 AI 设计抗体 III 期'],
+ ['Absci','美股 ABSI','③（大分子）','ABS-101 进 I 期'],
+ ['Tempus','美股 TEM','①⑤','美国最大临床分子数据平台，收入驱动'],
+ ['晶泰科技 XtalPi','港股 2228','②③ 干湿闭环','礼来两度合作（$2.5 亿 + $3.45 亿）'],
+ ['Nimbus','私企','③','zasocitinib 授权武田 $40 亿，已报 NDA']
+];
+/* ============ 渲染逻辑 ============ */
+const main = document.getElementById('main');
+const drawer = document.getElementById('drawer');
+let nodeIdx = 0;
+const NODES = [];
+STAGES.forEach(st => st.groups.forEach(gp => gp.nodes.forEach(nd => {
+  nd._id = 'n' + (nodeIdx++); nd._stage = st.name; nd._group = gp.g; NODES.push(nd);
+})));
+
+function esc(s){ return s ? String(s) : ''; }
+
+function renderGraph(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let html = '<div id="lanes">';
+  let hitCount = 0;
+  STAGES.forEach(st => {
+    html += '<div class="lane' + (st.hot ? ' hot' : '') + '">';
+    html += '<h2>' + st.name + '</h2><div class="task">' + st.en + ' · ' + st.task + '</div>';
+    st.groups.forEach(gp => {
+      html += '<div class="group"><h3>' + gp.g + '</h3>';
+      gp.nodes.forEach(nd => {
+        const hay = (nd.n + ' ' + nd.s + ' ' + nd.u + ' ' + nd.co + ' ' + (nd.lim||'') + ' ' + st.name).toLowerCase();
+        const hit = !q || hay.includes(q);
+        if (q && hit) hitCount++;
+        html += '<div class="node' + (q && !hit ? ' dim' : '') + '" data-id="' + nd._id + '">' +
+                '<i class="dot ' + MAT[nd.m].c + '"></i>' +
+                '<div><div class="nm">' + nd.n + '</div>' +
+                (nd.s ? '<div class="sub">' + nd.s + '</div>' : '') + '</div></div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  if (q && hitCount === 0) html = '<div class="empty">没有匹配「' + esc(q) + '」的节点</div>' + html;
+  main.innerHTML = html;
+  main.querySelectorAll('.node').forEach(el => el.addEventListener('click', () => {
+    main.querySelectorAll('.node.sel').forEach(x => x.classList.remove('sel'));
+    el.classList.add('sel');
+    openDrawer(el.dataset.id);
+  }));
+}
+
+function openDrawer(id){
+  const nd = NODES.find(x => x._id === id);
+  document.getElementById('dTitle').textContent = nd.n;
+  document.getElementById('dSub').textContent = (nd.s ? nd.s + ' · ' : '') + nd._stage + ' · ' + nd._group;
+  const mt = MAT[nd.m];
+  let h = '<span class="badge ' + mt.c + '">' + mt.label + '</span>';
+  if (nd.mn) h += '<div class="field"><h4>成熟度说明</h4><p>' + nd.mn + '</p></div>';
+  h += '<div class="field"><h4>用途</h4><p>' + nd.u + '</p></div>';
+  if (nd.co) h += '<div class="field"><h4>代表公司</h4><p>' + nd.co + '</p></div>';
+  if (nd.lim) h += '<div class="field"><h4>局限</h4><p>' + nd.lim + '</p></div>';
+  if (nd.tip) h += '<div class="field"><h4>投研提示</h4><p>' + nd.tip + '</p></div>';
+  if (nd.f && nd.f.length){
+    nd.f.forEach(fid => {
+      const fo = FORMULAS[fid];
+      h += '<div class="field formula"><h4>' + fid + ' · ' + fo.t + '</h4><div class="kt" data-tex="' + fo.tex.replace(/"/g,'&quot;') + '"></div></div>';
+    });
+  }
+  document.getElementById('dBody').innerHTML = h;
+  drawer.classList.add('open');
+  renderMath(document.getElementById('dBody'));
+}
+
+function renderMath(root){
+  if (typeof katex === 'undefined'){ setTimeout(() => renderMath(root), 200); return; }
+  root.querySelectorAll('.kt').forEach(el => {
+    try { katex.render(el.dataset.tex, el, {displayMode:true, throwOnError:false}); } catch(e){ el.textContent = el.dataset.tex; }
+  });
+}
+
+function renderCompanies(){
+  let h = '<div class="tablewrap"><table><tr><th>公司</th><th>状态</th><th>覆盖环节</th><th>最硬证据</th></tr>';
+  COMPANIES.forEach(r => { h += '<tr><td><b>' + r[0] + '</b></td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; });
+  h += '</table><p style="margin-top:14px;font-size:12.5px;color:#5b6675">口径：只收已上市 / 近上市公司与有分子进临床的明星私企。口径外但需留意：Isomorphic Labs（约 $26 亿融资，截至 2026 年中尚无分子进临床）、Chai Discovery（2026.7 融资 $4 亿、估值 $38 亿）、Xaira（$10 亿启动，管线仍在临床前）。</p></div>';
+  main.innerHTML = h;
+}
+
+function renderFormulas(){
+  let h = '<div id="formulaview">';
+  Object.keys(FORMULAS).forEach(fid => {
+    const fo = FORMULAS[fid];
+    h += '<div class="fcard"><h3>' + fid + ' · ' + fo.t + '</h3><div class="kt" data-tex="' + fo.tex.replace(/"/g,'&quot;') + '"></div><div class="used">用于：' + fo.used + '</div></div>';
+  });
+  h += '</div>';
+  main.innerHTML = h;
+  renderMath(main);
+}
+
+const VIEWS = {graph:renderGraph, companies:renderCompanies, formulas:renderFormulas};
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  drawer.classList.remove('open');
+  VIEWS[b.dataset.view]();
+}));
+document.getElementById('search').addEventListener('input', () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
+  document.querySelector('nav button[data-view="graph"]').classList.add('on');
+  renderGraph();
+});
+document.getElementById('close').addEventListener('click', () => drawer.classList.remove('open'));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') drawer.classList.remove('open'); });
+renderGraph();
+</script>
+</body>
+</html>
