@@ -11,10 +11,11 @@
     --bg:#f6f7f9; --panel:#ffffff; --ink:#1a2332; --sub:#5b6675; --line:#e3e7ee;
     --accent:#2563eb; --green:#16a34a; --amber:#d97706; --red:#dc2626;
     --green-bg:#ecfdf3; --amber-bg:#fffaeb; --red-bg:#fef2f2;
+    --col:152px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
-  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);overflow:hidden}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;display:flex;flex-direction:column;height:100vh}
   header{display:flex;align-items:center;gap:16px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
   header h1{font-size:17px;font-weight:700;white-space:nowrap}
   header .ver{font-size:12px;color:var(--sub);white-space:nowrap}
@@ -22,26 +23,52 @@
   #search:focus{border-color:var(--accent)}
   .legend{display:flex;gap:14px;font-size:12px;color:var(--sub);align-items:center}
   .legend span{display:flex;align-items:center;gap:5px;white-space:nowrap}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
   .dot.g{background:var(--green)} .dot.a{background:var(--amber)} .dot.r{background:var(--red)}
-  nav{display:flex;gap:4px;padding:8px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+  nav{display:flex;gap:4px;padding:8px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0;align-items:center}
   nav button{border:none;background:none;padding:7px 16px;font-size:13.5px;border-radius:8px;cursor:pointer;color:var(--sub)}
   nav button.on{background:var(--accent);color:#fff;font-weight:600}
-  main{height:calc(100vh - 108px);overflow:auto}
+  nav .navhint{margin-left:auto;font-size:11.5px;color:#98a2b3}
+  main{flex:1;overflow:auto;min-height:0}
+  header,nav,#chainbar{flex-shrink:0}
+
+  /* ---- chain bar ---- */
+  #chainbar{display:none;padding:9px 20px;background:#f8fbff;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center;gap:8px;flex-wrap:wrap}
+  #chainbar.on{display:flex}
+  .chain-seg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .chain-lbl{font-size:11px;color:var(--sub);font-weight:600;letter-spacing:.03em;white-space:nowrap}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:3px 10px;font-size:12px;cursor:pointer;color:#2c3646;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:inherit}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip.up{background:var(--amber-bg);border-color:#f5d9a8}
+  .chip.down{background:var(--green-bg);border-color:#b9ecc9}
+  .chip.cur{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+  .chip.cur:hover{color:#fff}
+  .arrow{color:#b6c0cd;font-size:11px;white-space:nowrap}
+  #clearchain{margin-left:auto;border:none;background:none;color:var(--sub);cursor:pointer;font-size:12px;text-decoration:underline;font-family:inherit;white-space:nowrap}
+
   /* ---- swimlanes ---- */
-  #lanes{display:flex;gap:14px;padding:18px 20px;align-items:flex-start;min-width:max-content}
-  .lane{width:308px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  #lanes{display:flex;gap:14px;padding:18px 20px;align-items:flex-start;min-width:max-content;position:relative}
+  #wires{position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:0}
+  .lane{width:308px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;position:relative;z-index:1;transition:opacity .18s}
   .lane.hot{border-top:4px solid var(--accent)}
+  .lane.faded{opacity:.55}
   .lane h2{font-size:15px;margin-bottom:2px}
   .lane .task{font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.5}
   .group{margin-bottom:12px}
   .group h3{font-size:12px;color:var(--accent);margin-bottom:6px;font-weight:600}
-  .node{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;background:#fbfcfe;transition:all .12s}
+  .node{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;background:#fbfcfe;transition:all .12s;position:relative}
   .node:hover{border-color:var(--accent);box-shadow:0 1px 4px rgba(37,99,235,.15)}
-  .node.sel{border-color:var(--accent);background:#eff4ff}
-  .node.dim{opacity:.25}
+  .node.sel{border-color:var(--accent);background:#eff4ff;box-shadow:0 0 0 2px rgba(37,99,235,.28)}
+  .node.up{border-color:#e9c07a;background:#fffdf6}
+  .node.down{border-color:#8ad7a6;background:#f6fdf8}
+  .node.dim{opacity:.2;filter:grayscale(.5)}
   .node .nm{font-size:13px;font-weight:600;line-height:1.35}
   .node .sub{font-size:11px;color:var(--sub);line-height:1.3}
+  .flowtag{margin-left:auto;flex-shrink:0;font-size:9.5px;line-height:1;padding:3px 5px;border-radius:6px;font-weight:700;letter-spacing:.02em}
+  .flowtag.up{background:#fdf0d5;color:#946200;border:1px solid #e9c07a}
+  .flowtag.down{background:#e6f8ec;color:#0f7a37;border:1px solid #8ad7a6}
+  .tl-node .flowtag{margin-left:auto;align-self:flex-start}
+
   /* ---- drawer ---- */
   #drawer{position:fixed;top:0;right:-480px;width:460px;max-width:92vw;height:100vh;background:var(--panel);box-shadow:-4px 0 24px rgba(0,0,0,.12);transition:right .25s ease;z-index:50;display:flex;flex-direction:column}
   #drawer.open{right:0}
@@ -59,6 +86,11 @@
   .field p{font-size:13.5px;line-height:1.75;color:#2c3646}
   .field.formula{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto}
   .field.formula h4{margin-bottom:6px}
+  .sharebox{display:flex;gap:8px;align-items:center;margin-top:2px}
+  .sharebox button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;color:var(--sub);font-family:inherit}
+  .sharebox button:hover{border-color:var(--accent);color:var(--accent)}
+  .sharebox code{font-size:11px;color:#98a2b3}
+
   /* ---- tables ---- */
   .tablewrap{padding:24px;max-width:1100px}
   table{border-collapse:collapse;width:100%;background:var(--panel);font-size:13px}
@@ -70,6 +102,50 @@
   .fcard h3{font-size:14px;margin-bottom:8px}
   .fcard .used{font-size:12px;color:var(--sub);margin-top:8px}
   .empty{padding:60px;text-align:center;color:var(--sub)}
+
+  /* ---- timeline ---- */
+  #timeline{padding:16px 20px 40px;width:max-content}
+  .tl-grid{display:grid;grid-template-columns:repeat(15,var(--col));gap:8px}
+  #timeline.fit{width:auto}
+  #timeline.fit .tl-grid{grid-template-columns:repeat(15,minmax(0,1fr));gap:5px}
+  #timeline.fit .tl-node{padding:4px 5px;gap:4px;align-items:center}
+  #timeline.fit .tl-node .tn{font-size:10px;-webkit-line-clamp:2;line-height:1.25}
+  #timeline.fit .tl-node .dot{margin-top:0;width:6px;height:6px}
+  #timeline.fit .era{padding:5px 6px;font-size:10px}
+  #timeline.fit .era small{font-size:9px}
+  #timeline.fit .ms{font-size:9.5px;padding-left:5px;border-left-width:2px}
+  #timeline.fit .ms b{font-size:10px}
+  #timeline.fit .flowtag{display:none}
+  .tl-tools{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .tl-tools .chain-lbl{margin:0}
+  #tlzoom{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:14px;padding:4px 11px;font-size:11.5px;cursor:pointer;color:#2c3646;font-family:inherit}
+  #tlzoom:hover{border-color:var(--accent);color:var(--accent)}
+  .tl-sticky{position:sticky;top:0;z-index:6;background:var(--bg);padding:4px 0 8px}
+  .tl-year{font-size:12px;font-weight:700;color:var(--sub);text-align:center;padding:5px 0;border-left:1px solid var(--line)}
+  .tl-year:first-child{border-left:none}
+  .era{border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .era small{display:block;font-size:10.5px;font-weight:500;opacity:.8;margin-top:1px}
+  .era.e1{background:#eef2ff;color:#4338ca}
+  .era.e2{background:#ecfeff;color:#0e7490}
+  .era.e3{background:#f0fdf4;color:#15803d}
+  .era.e4{background:#fef2f2;color:#b91c1c}
+  .ms{border-left:2px solid #c7d2fe;padding:1px 0 1px 8px;font-size:10.5px;line-height:1.45;color:var(--sub);margin-bottom:6px}
+  .ms b{display:block;font-size:11.5px;color:#3730a3;font-weight:700;margin-bottom:1px}
+  .msrow{margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+  .band{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;margin-bottom:12px}
+  .band.hot{border-left:4px solid var(--accent)}
+  .band-head{display:flex;align-items:baseline;gap:10px;margin-bottom:9px;padding-left:2px}
+  .band-head .bn{font-size:13.5px;font-weight:700}
+  .band-head .be{font-size:11.5px;color:var(--sub)}
+  .tl-node{border:1px solid var(--line);background:#fbfcfe;border-radius:8px;padding:6px 8px;cursor:pointer;transition:all .12s;display:flex;gap:6px;align-items:flex-start;overflow:hidden}
+  .tl-node:hover{border-color:var(--accent);box-shadow:0 1px 6px rgba(37,99,235,.18);transform:translateY(-1px)}
+  .tl-node .dot{margin-top:4px;width:8px;height:8px}
+  .tl-node .tn{font-size:11.5px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .tl-node.up{border-color:#e9c07a;background:#fffdf6}
+  .tl-node.down{border-color:#8ad7a6;background:#f6fdf8}
+  .tl-node.sel{border-color:var(--accent);background:#eff4ff;box-shadow:0 0 0 2px rgba(37,99,235,.25)}
+  .tl-node.dim{opacity:.22;filter:grayscale(.5)}
+  .tl-note{font-size:11.5px;color:var(--sub);margin:-6px 0 14px 2px}
   @media (max-width:760px){ #drawer{width:100vw} }
 </style>
 </head>
@@ -86,9 +162,12 @@
 </header>
 <nav>
   <button class="on" data-view="graph">图谱</button>
+  <button data-view="timeline">时间轴</button>
   <button data-view="companies">公司速查</button>
   <button data-view="formulas">公式总览</button>
+  <span class="navhint">点击节点查看上下游链路 · 地址栏可直接分享定位</span>
 </nav>
+<div id="chainbar"></div>
 <main id="main"></main>
 <aside id="drawer">
   <div class="dhead">
@@ -348,31 +427,167 @@ const STAGES = [
    lim:'信噪比低，只能用来发现信号，是不是真因果还得人工判断。', f:[]}]}
 ]}
 ];
-const COMPANIES = [
- ['Insilico Medicine（英矽智能）','港股 2025.12 上市','①②③⑤ 全链条','rentosertib IIa 阳性（Nature Medicine 2025.6），已进 III 期'],
- ['Recursion（含 Exscientia）','美股 RXRX','①②③④','REC-4881 II 期（FAP 息肉负荷降 43–53%）；Exscientia DSP-1181 史上首个 AI 设计分子进临床'],
- ['Schrödinger','美股 SDGR','②③','Nimbus TYK2（FEP+ 优化）→ 武田 zasocitinib 获 FDA 优先审评'],
- ['Relay Therapeutics','美股 RLAY','②③','RLY-2608 III 期（乳腺癌，PFS 9.2 个月）'],
- ['Generate Biomedicines','纳斯达克 2026.2 上市','③（大分子）','GB-0895 抗 TSLP III 期，全球首个 AI 设计抗体 III 期'],
- ['Absci','美股 ABSI','③（大分子）','ABS-101 进 I 期'],
- ['Tempus','美股 TEM','①⑤','美国最大临床分子数据平台，收入驱动'],
- ['晶泰科技 XtalPi','港股 2228','②③ 干湿闭环','礼来两度合作（$2.5 亿 + $3.45 亿）'],
- ['Nimbus','私企','③','zasocitinib 授权武田 $40 亿，已报 NDA']
+
+/* ---- 节点别名：给依赖表与年份表用的短键 ---- */
+const ALIAS = {
+  kg:'KG 嵌入推理（TransE / RotatE 类）', esm2:'ESM2 / ESMFold', esm3:'ESM3', evo2:'Evo 2',
+  scfm:'scGPT / Geneformer / scFoundation', state:'State', xcell:'X-Cell',
+  panda:'PandaOmics', pheno:'表型组学靶点发现', genetics:'人类遗传学靶点优先级评分',
+  af2:'AlphaFold 2', af3:'AlphaFold 3', boltz:'Boltz-1 / Boltz-2', chai1:'Chai-1',
+  protenix:'Protenix', isodde:'IsoDDE',
+  diffdock:'DiffDock / DiffDock-L', gnina:'GNINA', glide:'Glide + FEP 传统物理工作流', atomnet:'AtomNet',
+  chem42:'Chemistry42', reinvent:'REINVENT',
+  diffsbdd:'结构基扩散生成（DiffSBDD / Pocket2Mol / TargetDiff）', vae:'VAE 系分子生成（JT-VAE / MoLeR 等）',
+  chemprop:'Chemprop（D-MPNN）', unimol:'Uni-Mol',
+  fep:'FEP+', boltz2aff:'Boltz-2 亲和力模块', bo:'贝叶斯优化 + 主动学习闭环',
+  retro:'Retro* / ASKCOS / AiZynthFinder', exsci:'Exscientia 精确化学平台',
+  mpnn:'ProteinMPNN', rfdiff:'RFdiffusion', chroma:'Chroma', chai2:'Chai-2',
+  pepmlm:'PepMLM', tfold:'tFold-Ab / tFold-Ag', boltzgen:'BoltzGen',
+  tdc:'TDC 基准体系', ecfp:'指纹 + 梯度提升树（ECFP+XGBoost）', mpnnmulti:'多任务 D-MPNN',
+  admetlab:'ADMETlab 3.0 / 类似集成平台', hts:'高通量表型筛选',
+  vcelltox:'虚拟细胞预测毒性响应', pbpk:'PBPK + ML 混合建模',
+  unlearn:'Unlearn TwinRCT', twingpt:'TWIN-GPT', ehrnlp:'EHR-NLP 招募匹配',
+  multimodal:'多模态患者分层', inclinico:'InClinico', imaging:'医学影像基础模型',
+  txgnn:'TxGNN', rwe:'真实世界证据 NLP', deepsyn:'DeepSynergy / 组合预测模型',
+  doe:'贝叶斯优化 + DoE 工艺开发', pvnlp:'PV-NLP'
+};
+
+/* ---- 年份（时间轴定位用） ---- */
+const YEAR = {
+  kg:2013, esm2:2022, esm3:2024, evo2:2025, scfm:2023, state:2025, xcell:2026,
+  panda:2019, pheno:2016, genetics:2014,
+  af2:2021, af3:2024, boltz:2024, chai1:2024, protenix:2025, isodde:2026,
+  diffdock:2023, gnina:2021, glide:2012, atomnet:2015,
+  chem42:2020, reinvent:2017, diffsbdd:2022, vae:2018, chemprop:2019, unimol:2022,
+  fep:2012, boltz2aff:2025, bo:2020, retro:2018, exsci:2020,
+  mpnn:2022, rfdiff:2023, chroma:2023, chai2:2025, pepmlm:2025, tfold:2025, boltzgen:2025,
+  tdc:2021, ecfp:2016, mpnnmulti:2020, admetlab:2024, hts:2016, vcelltox:2023, pbpk:2019,
+  unlearn:2022, twingpt:2024, ehrnlp:2021, multimodal:2021, inclinico:2022, imaging:2021,
+  txgnn:2023, rwe:2018, deepsyn:2018, doe:2020, pvnlp:2015
+};
+
+/* ---- 依赖链：A → B 表示 A 的产出是 B 的输入（数据 → 模型 → 产出） ---- */
+const EDGES = [
+  ['kg','panda'], ['kg','txgnn'], ['genetics','panda'], ['pheno','chem42'], ['pheno','exsci'],
+  ['esm2','esm3'], ['esm3','pepmlm'], ['esm2','pepmlm'], ['esm2','rfdiff'],
+
+  ['af2','af3'], ['af3','boltz'], ['af3','chai1'], ['af3','protenix'], ['af3','isodde'],
+  ['af2','diffsbdd'], ['af3','diffsbdd'], ['chai1','chai2'], ['boltz','boltz2aff'], ['boltz','boltzgen'],
+  ['af2','mpnn'], ['rfdiff','mpnn'], ['rfdiff','chroma'], ['atomnet','diffdock'],
+
+  ['glide','gnina'], ['diffdock','gnina'], ['glide','fep'], ['gnina','fep'],
+  ['reinvent','chem42'], ['diffsbdd','chem42'], ['vae','chem42'],
+  ['chemprop','atomnet'], ['unimol','diffdock'], ['unimol','mpnnmulti'], ['chemprop','fep'],
+
+  ['chem42','retro'], ['reinvent','retro'], ['vae','retro'],
+  ['bo','exsci'], ['bo','doe'], ['chem42','exsci'], ['chemprop','exsci'],
+  ['chem42','hts'], ['exsci','hts'], ['fep','hts'], ['bo','hts'],
+  ['tdc','admetlab'], ['tdc','mpnnmulti'], ['state','vcelltox'], ['scfm','vcelltox'],
+  ['hts','pbpk'], ['vcelltox','pbpk'], ['admetlab','pbpk'], ['mpnnmulti','pbpk'], ['ecfp','pbpk'],
+
+  ['pbpk','unlearn'], ['imaging','multimodal'], ['multimodal','ehrnlp'],
+  ['unlearn','inclinico'], ['panda','inclinico'],
+
+  ['multimodal','rwe'], ['ehrnlp','rwe'], ['rwe','pvnlp'], ['vcelltox','deepsyn'], ['chemprop','deepsyn'],
+
+  /* 补齐孤立节点 */
+  ['esm3','evo2'], ['evo2','xcell'], ['evo2','vcelltox'],
+  ['scfm','xcell'], ['state','xcell'], ['xcell','vcelltox'],
+  ['af3','tfold'], ['chai1','tfold'], ['boltz','tfold'], ['tfold','chai2'], ['tfold','boltzgen'],
+  ['unlearn','twingpt'], ['rwe','twingpt'], ['twingpt','inclinico'],
+  ['retro','doe']
 ];
+
+/* ---- 时间轴：时代分段与演进里程碑 ---- */
+const ERAS = [
+  {from:2012, to:2016, cls:'e1', t:'深度学习入场', s:'AlexNet 之后，QSAR / 对接开始换神经网络'},
+  {from:2017, to:2020, cls:'e2', t:'生成式分子设计', s:'GAN / VAE / RL 把"生成分子"变成一条技术路线'},
+  {from:2021, to:2023, cls:'e3', t:'结构预测革命', s:'AlphaFold2 / 扩散模型重写结构问题'},
+  {from:2024, to:2026, cls:'e4', t:'扩散 + 基础模型', s:'复合物、抗体、虚拟细胞走向平台化'}
+];
+const MILESTONES = [
+  {y:2012, t:'AlexNet 传播开来', d:'深度学习范式进入药物发现视野'},
+  {y:2014, t:'GAN 提出', d:'为后续分子生成提供骨架'},
+  {y:2016, t:'GAN 生成分子 / Cell Painting', d:'表型组学与生成式分子同时起步'},
+  {y:2017, t:'REINVENT 定向生成', d:'强化学习把生成目标对准打分函数'},
+  {y:2018, t:'AlphaFold 1（CASP13）', d:'蛋白结构预测开始以深度学习为主线'},
+  {y:2020, t:'AlphaFold2 亮相 CASP14', d:'原子级精度，2021 年论文与结构库开放'},
+  {y:2022, t:'扩散模型进入分子设计', d:'结构基生成、对接姿态采样先后改用扩散'},
+  {y:2023, t:'RFdiffusion / Chroma', d:'从头蛋白设计与抗体设计成为可执行流水线'},
+  {y:2024, t:'AlphaFold 3 · 诺贝尔化学奖', d:'复合物统一预测；AF3 未开源催生开源平替'},
+  {y:2025, t:'开源平替与亲和力预测', d:'Boltz / Chai 追平 AF3，AI 设计抗体进 III 期'},
+  {y:2026, t:'一体化引擎与虚拟细胞', d:'IsoDDE、X-Cell 把单点模型收拢成引擎'}
+];
+
 /* ============ 渲染逻辑 ============ */
 const main = document.getElementById('main');
 const drawer = document.getElementById('drawer');
+const chainbar = document.getElementById('chainbar');
 let nodeIdx = 0;
 const NODES = [];
 STAGES.forEach(st => st.groups.forEach(gp => gp.nodes.forEach(nd => {
   nd._id = 'n' + (nodeIdx++); nd._stage = st.name; nd._group = gp.g; NODES.push(nd);
 })));
 
-function esc(s){ return s ? String(s) : ''; }
+const KEY = {};                                   // 短键 → node
+Object.keys(ALIAS).forEach(k => {
+  const nd = NODES.find(x => x.n === ALIAS[k]);
+  if (nd) KEY[k] = nd; else console.warn('alias 未匹配到节点：', k, ALIAS[k]);
+});
+Object.keys(YEAR).forEach(k => { if (KEY[k]) KEY[k]._y = YEAR[k]; });
 
+const OUT = {}, IN = {};                          // 邻接表（按 _id）
+NODES.forEach(nd => { OUT[nd._id] = []; IN[nd._id] = []; });
+const PAIRS = [];
+EDGES.forEach(([a, b]) => {
+  const na = KEY[a], nb = KEY[b];
+  if (!na || !nb || na === nb) { console.warn('依赖边无效：', a, '→', b); return; }
+  OUT[na._id].push(nb._id); IN[nb._id].push(na._id);
+  PAIRS.push([na._id, nb._id]);
+});
+
+function esc(s){ return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+function byId(id){ return NODES.find(x => x._id === id); }
+
+/* ---------- 状态与 URL 深链 ---------- */
+const state = { view:'graph', node:null, focus:null, fit:true };   // focus: {set:Set, up:Set, down:Set}
+let silent = false;
+
+function route(){
+  const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
+  const [head, tail] = raw.split('/');
+  let view = 'graph', node = null;
+  if (head === 'timeline' || head === 'companies' || head === 'formulas') view = head;
+  const idRaw = (view === 'graph' ? head : tail) || '';
+  const m = idRaw.match(/^node-(\d+)$/) || idRaw.match(/^n(\d+)$/);
+  if (m){ const nd = byId('n' + m[1]); if (nd){ node = nd._id; if (view !== 'timeline') view = 'graph'; } }
+  return {view, node};
+}
+
+function pushHash(){
+  const h = state.view === 'graph'
+    ? (state.node ? '#node-' + state.node.slice(1) : '#')
+    : '#' + state.view + (state.node ? '/node-' + state.node.slice(1) : '');
+  if (location.hash === h) return;
+  silent = true;
+  history.replaceState(null, '', h);
+  silent = false;
+}
+
+function applyRoute(){
+  const r = route();
+  state.view = r.view;
+  state.node = r.node;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.view === r.view));
+  document.getElementById('search').value = '';
+  VIEWS[r.view]();
+  if (r.node) openNode(r.node, true); else closeDrawer();
+}
+
+/* ---------- 图谱 ---------- */
 function renderGraph(){
   const q = document.getElementById('search').value.trim().toLowerCase();
-  let html = '<div id="lanes">';
+  let html = '<svg id="wires" xmlns="http://www.w3.org/2000/svg"></svg><div id="lanes">';
   let hitCount = 0;
   STAGES.forEach(st => {
     html += '<div class="lane' + (st.hot ? ' hot' : '') + '">';
@@ -383,7 +598,7 @@ function renderGraph(){
         const hay = (nd.n + ' ' + nd.s + ' ' + nd.u + ' ' + nd.co + ' ' + (nd.lim||'') + ' ' + st.name).toLowerCase();
         const hit = !q || hay.includes(q);
         if (q && hit) hitCount++;
-        html += '<div class="node' + (q && !hit ? ' dim' : '') + '" data-id="' + nd._id + '">' +
+        html += '<div class="node' + (q && !hit ? ' dim' : '') + '" data-id="' + nd._id + '" title="' + esc(nd.n) + '">' +
                 '<i class="dot ' + MAT[nd.m].c + '"></i>' +
                 '<div><div class="nm">' + nd.n + '</div>' +
                 (nd.s ? '<div class="sub">' + nd.s + '</div>' : '') + '</div></div>';
@@ -395,17 +610,134 @@ function renderGraph(){
   html += '</div>';
   if (q && hitCount === 0) html = '<div class="empty">没有匹配「' + esc(q) + '」的节点</div>' + html;
   main.innerHTML = html;
-  main.querySelectorAll('.node').forEach(el => el.addEventListener('click', () => {
-    main.querySelectorAll('.node.sel').forEach(x => x.classList.remove('sel'));
-    el.classList.add('sel');
-    openDrawer(el.dataset.id);
-  }));
+  main.querySelectorAll('.node').forEach(el => el.addEventListener('click', () => openNode(el.dataset.id)));
+  if (state.focus) paintChain();
 }
 
-function openDrawer(id){
-  const nd = NODES.find(x => x._id === id);
+/* ---------- 链路计算与高亮 ---------- */
+function walk(startId, adj){
+  const seen = new Set(), stack = (adj[startId] || []).slice();
+  while (stack.length){
+    const id = stack.pop();
+    if (seen.has(id) || id === startId) continue;
+    seen.add(id);
+    (adj[id] || []).forEach(nx => { if (!seen.has(nx)) stack.push(nx); });
+  }
+  return seen;
+}
+
+function buildFocus(id){
+  const up = walk(id, IN), down = walk(id, OUT);
+  const set = new Set([id, ...up, ...down]);
+  return {id, up, down, up1: IN[id] || [], down1: OUT[id] || [], set};
+}
+
+function markClass(id){
+  if (!state.focus) return '';
+  if (id === state.focus.id) return ' sel';
+  if (state.focus.up.has(id)) return ' up';
+  if (state.focus.down.has(id)) return ' down';
+  return ' dim';
+}
+
+function paintChain(){
+  const f = state.focus;
+  const nodes = document.querySelectorAll('#main .node, #main .tl-node');
+  nodes.forEach(el => {
+    el.classList.remove('dim','up','down','sel');
+    const tag = el.querySelector('.flowtag');
+    if (tag) tag.remove();
+    const cls = markClass(el.dataset.id).trim();
+    if (cls) el.classList.add(cls);
+    if (f && f.set.has(el.dataset.id) && el.dataset.id !== f.id){
+      const t = document.createElement('span');
+      const isUp = f.up.has(el.dataset.id);
+      t.className = 'flowtag ' + (isUp ? 'up' : 'down');
+      t.textContent = isUp ? '上游' : '下游';
+      el.appendChild(t);
+    }
+  });
+  document.querySelectorAll('#main .lane').forEach(lane => {
+    const any = lane.querySelector('.node:not(.dim)');
+    lane.classList.toggle('faded', !!(f && !any));
+  });
+  renderChainBar();
+  drawWires();
+}
+
+function renderChainBar(){
+  const f = state.focus;
+  chainbar.classList.toggle('on', !!f);
+  if (!f) { chainbar.innerHTML = ''; return; }
+  const cur = byId(f.id);
+  const ups = f.up1.map(byId).filter(Boolean);
+  const downs = f.down1.map(byId).filter(Boolean);
+  const chip = (nd, cls) => '<button class="chip ' + cls + '" data-go="' + nd._id + '" title="' + esc(nd.n) + '">' + esc(nd.n) + '</button>';
+  const lbl = (t, d, n) => '<span class="chain-lbl" title="' + (d ? '直接相连 ' + d + ' 个，整条链路共 ' + n + ' 个' : '') + '">' + t + (d < n ? ' ' + d + ' / 全链 ' + n : ' ' + n) + '</span>';
+  let h = '';
+  h += lbl('上游输入', ups.length, f.up.size);
+  h += '<span class="chain-seg">' + (ups.length ? ups.map(n => chip(n,'up')).join('<span class="arrow">→</span>') : '<span class="arrow">（无）</span>') + '</span>';
+  h += '<span class="arrow">→</span>' + chip(cur, 'cur');
+  h += '<span class="arrow">→</span>' + lbl('下游应用', downs.length, f.down.size);
+  h += '<span class="chain-seg">' + (downs.length ? downs.map(n => chip(n,'down')).join('<span class="arrow">→</span>') : '<span class="arrow">（无）</span>') + '</span>';
+  h += '<button id="clearchain">清除高亮</button>';
+  chainbar.innerHTML = h;
+  chainbar.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => openNode(b.dataset.go)));
+  chainbar.querySelector('#clearchain').addEventListener('click', () => {
+    state.focus = null; state.node = null;
+    paintChain(); closeDrawer(); pushHash();
+  });
+}
+
+function drawWires(){
+  const svg = document.getElementById('wires');
+  const lanes = document.getElementById('lanes');
+  if (!svg || !lanes) return;
+  svg.innerHTML = '';
+  const f = state.focus;
+  if (!f) return;
+  const w = lanes.scrollWidth, hgt = lanes.scrollHeight, box = lanes.getBoundingClientRect();
+  svg.setAttribute('width', w); svg.setAttribute('height', hgt);
+  svg.setAttribute('viewBox', '0 0 ' + w + ' ' + hgt);
+  svg.innerHTML = '<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">' +
+                  '<path d="M0,0 L7,3.5 L0,7 z" fill="#94a3b8"/></marker></defs>';
+  PAIRS.forEach(([a, b]) => {
+    if (!f.set.has(a) || !f.set.has(b)) return;
+    const ea = document.querySelector('.node[data-id="' + a + '"]');
+    const eb = document.querySelector('.node[data-id="' + b + '"]');
+    if (!ea || !eb) return;
+    const ra = ea.getBoundingClientRect(), rb = eb.getBoundingClientRect();
+    const ax = ra.left - box.left, ay = ra.top - box.top, bx = rb.left - box.left, by = rb.top - box.top;
+    const down = by >= ay;
+    const x1 = ax + ra.width / 2, y1 = down ? ay + ra.height : ay;
+    const x2 = bx + rb.width / 2, y2 = down ? by : by + rb.height;
+    const dy = Math.max(18, Math.abs(y2 - y1) * 0.42) * (down ? 1 : -1);
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', `M${x1},${y1} C${x1},${y1 + dy} ${x2},${y2 - dy} ${x2},${y2}`);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', a === f.id ? '#16a34a' : (b === f.id ? '#d97706' : '#94a3b8'));
+    p.setAttribute('stroke-width', '1.4');
+    p.setAttribute('stroke-dasharray', '4 3');
+    p.setAttribute('opacity', '0.65');
+    p.setAttribute('marker-end', 'url(#ah)');
+    svg.appendChild(p);
+  });
+  const note = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  note.setAttribute('x', '4'); note.setAttribute('y', hgt - 6);
+  note.setAttribute('fill', '#b6c0cd'); note.setAttribute('font-size', '11');
+  note.textContent = '橙色 = 上游输入 · 绿色 = 下游应用';
+  svg.appendChild(note);
+}
+
+/* ---------- 抽屉 ---------- */
+function openNode(id, fromRoute){
+  const nd = byId(id);
+  if (!nd) return;
+  state.node = id;
+  state.focus = buildFocus(id);
   document.getElementById('dTitle').textContent = nd.n;
-  document.getElementById('dSub').textContent = (nd.s ? nd.s + ' · ' : '') + nd._stage + ' · ' + nd._group;
+  document.getElementById('dSub').textContent = (nd.s ? nd.s + ' · ' : '') + nd._stage + ' · ' + nd._group +
+    (nd._y ? ' · ' + nd._y + ' 年' : '');
   const mt = MAT[nd.m];
   let h = '<span class="badge ' + mt.c + '">' + mt.label + '</span>';
   if (nd.mn) h += '<div class="field"><h4>成熟度说明</h4><p>' + nd.mn + '</p></div>';
@@ -419,9 +751,29 @@ function openDrawer(id){
       h += '<div class="field formula"><h4>' + fid + ' · ' + fo.t + '</h4><div class="kt" data-tex="' + fo.tex.replace(/"/g,'&quot;') + '"></div></div>';
     });
   }
+  const hash = state.view === 'graph' ? '#node-' + id.slice(1) : '#' + state.view + '/node-' + id.slice(1);
+  h += '<div class="field"><h4>分享定位</h4><div class="sharebox"><code>' + esc(hash) + '</code>' +
+       '<button id="copylink">复制链接</button></div></div>';
   document.getElementById('dBody').innerHTML = h;
+  document.getElementById('dBody').querySelector('#copylink').addEventListener('click', async (e) => {
+    const url = location.origin + location.pathname + hash;
+    try { await navigator.clipboard.writeText(url); e.target.textContent = '已复制'; }
+    catch(_){ location.hash = hash; e.target.textContent = '已写入地址栏'; }
+    setTimeout(() => { e.target.textContent = '复制链接'; }, 1600);
+  });
   drawer.classList.add('open');
   renderMath(document.getElementById('dBody'));
+  paintChain();
+  if (!fromRoute) pushHash();
+  const sel = document.querySelector('.node[data-id="' + id + '"], .tl-node[data-id="' + id + '"]');
+  if (sel) sel.scrollIntoView({block:'center', inline:'center', behavior:'smooth'});
+}
+
+function closeDrawer(){
+  drawer.classList.remove('open');
+  state.node = null;
+  state.focus = null;
+  paintChain();
 }
 
 function renderMath(root){
@@ -430,6 +782,19 @@ function renderMath(root){
     try { katex.render(el.dataset.tex, el, {displayMode:true, throwOnError:false}); } catch(e){ el.textContent = el.dataset.tex; }
   });
 }
+
+/* ---------- 公司 / 公式 ---------- */
+const COMPANIES = [
+ ['Insilico Medicine（英矽智能）','港股 2025.12 上市','①②③⑤ 全链条','rentosertib IIa 阳性（Nature Medicine 2025.6），已进 III 期'],
+ ['Recursion（含 Exscientia）','美股 RXRX','①②③④','REC-4881 II 期（FAP 息肉负荷降 43–53%）；Exscientia DSP-1181 史上首个 AI 设计分子进临床'],
+ ['Schrödinger','美股 SDGR','②③','Nimbus TYK2（FEP+ 优化）→ 武田 zasocitinib 获 FDA 优先审评'],
+ ['Relay Therapeutics','美股 RLAY','②③','RLY-2608 III 期（乳腺癌，PFS 9.2 个月）'],
+ ['Generate Biomedicines','纳斯达克 2026.2 上市','③（大分子）','GB-0895 抗 TSLP III 期，全球首个 AI 设计抗体 III 期'],
+ ['Absci','美股 ABSI','③（大分子）','ABS-101 进 I 期'],
+ ['Tempus','美股 TEM','①⑤','美国最大临床分子数据平台，收入驱动'],
+ ['晶泰科技 XtalPi','港股 2228','②③ 干湿闭环','礼来两度合作（$2.5 亿 + $3.45 亿）'],
+ ['Nimbus','私企','③','zasocitinib 授权武田 $40 亿，已报 NDA']
+];
 
 function renderCompanies(){
   let h = '<div class="tablewrap"><table><tr><th>公司</th><th>状态</th><th>覆盖环节</th><th>最硬证据</th></tr>';
@@ -449,21 +814,98 @@ function renderFormulas(){
   renderMath(main);
 }
 
-const VIEWS = {graph:renderGraph, companies:renderCompanies, formulas:renderFormulas};
+/* ---------- 时间轴 ---------- */
+const Y0 = 2012, Y1 = 2026, NCOL = Y1 - Y0 + 1;
+
+function pack(arr, keyFn){
+  const counts = {}, rowOf = new Map();
+  arr.map(keyFn).forEach(k => { counts[k] = 0; });
+  arr.forEach(nd => {
+    const k = keyFn(nd);
+    rowOf.set(nd._id, counts[k]++);
+  });
+  const rows = Math.max(1, ...Object.values(counts));
+  return {rows, rowOf};
+}
+const colOf = y => Math.min(NCOL, Math.max(1, y - Y0 + 1));
+
+function renderTimeline(){
+  const years = Array.from({length: NCOL}, (_, i) => Y0 + i);
+  const fit = state.fit !== false;
+  let h = '<div id="timeline"' + (fit ? ' class="fit"' : '') + '>';
+  h += '<div class="tl-tools"><span class="chain-lbl">2012 – 2026 · 4 个技术时代 · 11 个拐点</span>' +
+       '<button id="tlzoom">' + (fit ? '放大看细节' : '缩到一屏') + '</button></div>';
+
+  h += '<div class="tl-sticky"><div class="tl-grid">' +
+       years.map(y => '<div class="tl-year">' + y + '</div>').join('') + '</div></div>';
+
+  h += '<div class="tl-grid" style="margin-bottom:6px">' +
+       ERAS.map(e => '<div class="era ' + e.cls + '" style="grid-column:' + colOf(e.from) + ' / span ' + (colOf(e.to) - colOf(e.from) + 1) + '" title="' + esc(e.s) + '">' +
+                      esc(e.t) + '<small>' + e.from + '–' + e.to + '</small></div>').join('') + '</div>';
+
+  const ms = MILESTONES.slice().sort((a, b) => a.y - b.y);
+  const msPack = pack(ms, m => m.y);
+  h += '<div class="msrow"><div class="chain-lbl" style="margin-bottom:8px">演进脉络</div>' +
+       '<div class="tl-grid">' +
+       ms.map(m => '<div class="ms" style="grid-column:' + colOf(m.y) + ';grid-row:' + (msPack.rowOf.get(m.y) + 1) + '">' +
+                   '<b>' + m.y + ' · ' + esc(m.t) + '</b>' + esc(m.d) + '</div>').join('') +
+       '</div></div>';
+
+  STAGES.forEach(st => {
+    const list = [];
+    st.groups.forEach(gp => gp.nodes.forEach(nd => list.push(nd)));
+    list.sort((a, b) => (a._y || 0) - (b._y || 0) || a.n.localeCompare(b.n));
+    const pk = pack(list, nd => nd._y || 0);
+    h += '<div class="band' + (st.hot ? ' hot' : '') + '">' +
+         '<div class="band-head"><span class="bn">' + st.name + '</span><span class="be">' + st.en + ' · ' + list.length + ' 个节点</span></div>' +
+         '<div class="tl-grid">' +
+         list.map(nd => '<div class="tl-node" data-id="' + nd._id + '" style="grid-column:' + colOf(nd._y || Y0) + ';grid-row:' + (pk.rowOf.get(nd._id) + 1) + '" title="' + esc(nd.n) + (nd._y ? '（' + nd._y + '）' : '') + '">' +
+                        '<i class="dot ' + MAT[nd.m].c + '"></i><span class="tn">' + nd.n + '</span></div>').join('') +
+         '</div></div>';
+  });
+
+  h += '<div class="tl-note">按技术首次出现 / 代表作发表的年份定位；同一节点跨多年时取最早一年。点击节点可看详情与上下游链路。</div>';
+  h += '</div>';
+  main.innerHTML = h;
+  main.querySelectorAll('.tl-node').forEach(el => el.addEventListener('click', () => openNode(el.dataset.id)));
+  main.querySelector('#tlzoom').addEventListener('click', () => {
+    state.fit = !(state.fit !== false);
+    const left = document.getElementById('main').scrollLeft;
+    renderTimeline();
+    if (!state.fit) document.getElementById('main').scrollLeft = left;
+  });
+  if (state.focus) paintChain();
+}
+
+const VIEWS = {graph:renderGraph, timeline:renderTimeline, companies:renderCompanies, formulas:renderFormulas};
+
+/* ---------- 事件绑定 ---------- */
 document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
-  b.classList.add('on');
-  drawer.classList.remove('open');
-  VIEWS[b.dataset.view]();
+  state.view = b.dataset.view;
+  state.focus = null; state.node = null;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.getElementById('search').value = '';
+  closeDrawer();
+  VIEWS[state.view]();
+  main.scrollTop = 0;
+  pushHash();
 }));
+
 document.getElementById('search').addEventListener('input', () => {
-  document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
-  document.querySelector('nav button[data-view="graph"]').classList.add('on');
+  if (state.view !== 'graph'){
+    state.view = 'graph';
+    document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.view === 'graph'));
+  }
   renderGraph();
 });
-document.getElementById('close').addEventListener('click', () => drawer.classList.remove('open'));
-document.addEventListener('keydown', e => { if (e.key === 'Escape') drawer.classList.remove('open'); });
-renderGraph();
+document.getElementById('close').addEventListener('click', () => { closeDrawer(); pushHash(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){ closeDrawer(); pushHash(); }
+});
+window.addEventListener('resize', () => { if (state.focus) drawWires(); });
+window.addEventListener('hashchange', () => { if (!silent) applyRoute(); });
+
+applyRoute();
 </script>
 </body>
 </html>
