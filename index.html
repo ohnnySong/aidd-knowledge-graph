@@ -103,6 +103,26 @@
   .fcard .used{font-size:12px;color:var(--sub);margin-top:8px}
   .empty{padding:60px;text-align:center;color:var(--sub)}
 
+  /* ---- papers ---- */
+  #papersview{max-width:860px;margin:0 auto;padding:24px 20px 60px}
+  #papersview .phead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  #papersview .phead h2{font-size:20px}
+  #papersview .phead .upd{font-size:12.5px;color:var(--sub)}
+  .dayh{font-size:15px;font-weight:700;margin:22px 0 10px}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin-bottom:12px}
+  .pcard .tzh{font-size:16px;font-weight:700;line-height:1.5}
+  .pcard .ten{font-size:13px;color:var(--sub);margin-top:3px;line-height:1.5}
+  .pcard .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;font-size:12.5px;color:var(--sub)}
+  .pcard .meta .src{background:#eff4ff;color:var(--accent);padding:2px 9px;border-radius:10px;font-weight:600;font-size:11.5px}
+  .pcard .meta a{color:var(--accent);text-decoration:none}
+  .pcard .meta a:hover{text-decoration:underline}
+  .pcard .ttag{font-size:11.5px;background:#f1f5fb;color:var(--sub);padding:2px 8px;border-radius:10px}
+  .pcard .intro{display:none;font-size:13.5px;line-height:1.9;color:#2c3646;border-top:1px dashed var(--line);padding-top:12px;margin-top:4px;white-space:pre-wrap}
+  .pcard.open .intro{display:block}
+  .pcard .tgl{border:none;background:none;color:var(--accent);font-size:13px;cursor:pointer;padding:4px 0}
+  .pcard .tgl:hover{text-decoration:underline}
+
+
   /* ---- timeline ---- */
   #timeline{padding:16px 20px 40px;width:max-content}
   .tl-grid{display:grid;grid-template-columns:repeat(15,var(--col));gap:8px}
@@ -164,7 +184,7 @@
   <button class="on" data-view="graph">图谱</button>
   <button data-view="timeline">时间轴</button>
   <button data-view="companies">公司速查</button>
-  <button data-view="formulas">公式总览</button>
+  <button data-view="papers">每日论文</button>
   <span class="navhint">点击节点查看上下游链路 · 地址栏可直接分享定位</span>
 </nav>
 <div id="chainbar"></div>
@@ -557,7 +577,7 @@ function route(){
   const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
   const [head, tail] = raw.split('/');
   let view = 'graph', node = null;
-  if (head === 'timeline' || head === 'companies' || head === 'formulas') view = head;
+  if (head === 'timeline' || head === 'companies' || head === 'papers') view = head;
   const idRaw = (view === 'graph' ? head : tail) || '';
   const m = idRaw.match(/^node-(\d+)$/) || idRaw.match(/^n(\d+)$/);
   if (m){ const nd = byId('n' + m[1]); if (nd){ node = nd._id; if (view !== 'timeline') view = 'graph'; } }
@@ -741,9 +761,17 @@ function openNode(id, fromRoute){
   const mt = MAT[nd.m];
   let h = '<span class="badge ' + mt.c + '">' + mt.label + '</span>';
   if (nd.mn) h += '<div class="field"><h4>成熟度说明</h4><p>' + nd.mn + '</p></div>';
-  h += '<div class="field"><h4>用途</h4><p>' + nd.u + '</p></div>';
+  const dd = nd.d || {};
+  if (dd.principle) h += '<div class="field"><h4>一句话原理</h4><p>' + dd.principle + '</p></div>';
+  h += '<div class="field"><h4>' + (dd.principle ? '核心机制' : '用途') + '</h4><p>' + (dd.mechanism || nd.u) + '</p></div>';
+  if (dd.why) h += '<div class="field"><h4>为什么有效</h4><p>' + dd.why + '</p></div>';
   if (nd.co) h += '<div class="field"><h4>代表公司</h4><p>' + nd.co + '</p></div>';
   if (nd.lim) h += '<div class="field"><h4>局限</h4><p>' + nd.lim + '</p></div>';
+  if (dd.papers && dd.papers.length){
+    let ph = '';
+    dd.papers.forEach(p => { ph += '<p style="margin-bottom:4px">· ' + p + '</p>'; });
+    h += '<div class="field"><h4>关键论文</h4>' + ph + '</div>';
+  }
   if (nd.tip) h += '<div class="field"><h4>投研提示</h4><p>' + nd.tip + '</p></div>';
   if (nd.f && nd.f.length){
     nd.f.forEach(fid => {
@@ -803,15 +831,42 @@ function renderCompanies(){
   main.innerHTML = h;
 }
 
-function renderFormulas(){
-  let h = '<div id="formulaview">';
-  Object.keys(FORMULAS).forEach(fid => {
-    const fo = FORMULAS[fid];
-    h += '<div class="fcard"><h3>' + fid + ' · ' + fo.t + '</h3><div class="kt" data-tex="' + fo.tex.replace(/"/g,'&quot;') + '"></div><div class="used">用于：' + fo.used + '</div></div>';
+function renderPapers(){
+  main.innerHTML = '<div id="papersview"><div class="empty">加载中…</div></div>';
+  fetch('papers.json?_=' + Date.now()).then(r => {
+    if (!r.ok) throw new Error('no papers.json');
+    return r.json();
+  }).then(data => {
+    const days = data.days || [];
+    let h = '<div id="papersview"><div class="phead"><h2>每日 AIDD 论文</h2>' +
+      '<span class="upd">每日 07:47 自动更新 · arXiv + bioRxiv · DeepSeek 精选 Top 3 · 更新于 ' + esc(data.updated || '—') + '</span></div>';
+    if (!days.length){ main.innerHTML = h + '<div class="empty">暂无数据，明日 07:47 首次更新</div>'; return; }
+    days.forEach(day => {
+      h += '<div class="dayh">' + day.date + '</div>';
+      day.papers.forEach(p => {
+        h += '<div class="pcard">' +
+          '<div class="tzh">' + esc(p.title_zh || p.title_en) + '</div>' +
+          (p.title_zh ? '<div class="ten">' + esc(p.title_en) + '</div>' : '') +
+          '<div class="meta"><span class="src">' + p.source + '</span>' +
+          '<span>' + esc(p.authors) + '</span>' +
+          '<span class="ttag">' + (p.text_type === 'introduction' ? 'Introduction 全文翻译' : '摘要翻译') + '</span>' +
+          '<a href="' + p.url + '" target="_blank" rel="noopener">页面 ↗</a>' +
+          '<a href="' + p.pdf + '" target="_blank" rel="noopener">PDF ↗</a></div>' +
+          '<button class="tgl">展开中文全文 ▾</button>' +
+          '<div class="intro">' + esc(p.intro_zh) + '</div></div>';
+      });
+    });
+    h += '</div>';
+    main.innerHTML = h;
+    main.querySelectorAll('.pcard .tgl').forEach(b => b.addEventListener('click', () => {
+      const c = b.closest('.pcard');
+      c.classList.toggle('open');
+      b.textContent = c.classList.contains('open') ? '收起 ▴' : '展开中文全文 ▾';
+    }));
+  }).catch(() => {
+    main.innerHTML = '<div id="papersview"><div class="phead"><h2>每日 AIDD 论文</h2></div>' +
+      '<div class="empty">数据尚未生成，明日 07:47 首次更新</div></div>';
   });
-  h += '</div>';
-  main.innerHTML = h;
-  renderMath(main);
 }
 
 /* ---------- 时间轴 ---------- */
@@ -877,7 +932,7 @@ function renderTimeline(){
   if (state.focus) paintChain();
 }
 
-const VIEWS = {graph:renderGraph, timeline:renderTimeline, companies:renderCompanies, formulas:renderFormulas};
+const VIEWS = {graph:renderGraph, timeline:renderTimeline, companies:renderCompanies, papers:renderPapers};
 
 /* ---------- 事件绑定 ---------- */
 document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
