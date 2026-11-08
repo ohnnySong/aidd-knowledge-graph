@@ -1,6 +1,21 @@
 {
  "days": [
   {
+   "date": "2026-11-08",
+   "papers": [
+    {
+     "title_zh": "表型可塑性数学模型预测表型间转化是神经母细胞瘤的药物靶点",
+     "title_en": "Mathematical model of phenotypic plasticity predicts interconversion is a drug target for neuroblastoma.",
+     "authors": "Covell, F.; Patel, M.; Wertheim, K. Y.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.11.04.764313",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.11.04.764313v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\n神经母细胞瘤是一种儿科癌症，起源于交感神经系统的神经嵴细胞，由去甲肾上腺素能（noradrenergic，NOR/ADRN/N）、间充质样（mesenchymal like，MES/S）和中间型（intermediate，I-type/I）细胞类型组成。这些细胞可以在不同类型之间相互转化，从而导致治疗耐药和复发。我们开发了一个数学模型来研究相互转化模式如何影响表型特异性抑制剂的疗效。我们使用三个常微分方程来描述三个细胞群体的动力学，包括逻辑斯谛生长（logistic growth）、相互转化和药物诱导的死亡。在64种可能的相互转化模式中，有五种模式减少了目标细胞群体：两种针对N细胞，三种针对S细胞。N细胞靶向模式在较高的相互转化率下更为有效，而间充质靶向模式在较低的相互转化率下更为有效。稳定性分析揭示，自然肿瘤生长始终是不稳定的，但在治疗期间，抑制N细胞的模式联合S细胞抑制剂给出了最一致稳定的原点。测试多阶段和周期性治疗方案显示，抑制N细胞的模式联合S细胞抑制剂，随后采用抑制S细胞的模式联合N细胞抑制剂，实现了更可靠的缓解。五种关注模式中有三种与已报道的生物学合理性相对应，且已知化合物可诱导大多数所需的转变，支持了这些策略在改善神经母细胞瘤治疗结局方面的临床相关性。"
+    }
+   ]
+  },
+  {
    "date": "2026-11-07",
    "papers": [
     {
@@ -36,5 +51,5 @@
    ]
   }
  ],
- "updated": "2026-11-07 23:14"
+ "updated": "2026-11-08 10:43"
 }
