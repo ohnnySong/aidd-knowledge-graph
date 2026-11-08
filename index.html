@@ -212,6 +212,596 @@ const FORMULAS = {
   F11:{t:'知识图谱嵌入（TransE）', tex:'\\mathbf{h} + \\mathbf{r} \\approx \\mathbf{t}, \\qquad \\mathcal{L} = \\sum \\max\\left(0,\\ \\gamma + d(\\mathbf{h}+\\mathbf{r}, \\mathbf{t}) - d(\\mathbf{h}^{\\prime}+\\mathbf{r}, \\mathbf{t}^{\\prime})\\right)', used:'靶点发现 / 老药新用'}
 };
 const MAT = {1:{c:'g',label:'学术验证'},2:{c:'a',label:'工业落地'},3:{c:'r',label:'有分子进临床'}};
+const DETAILS = {
+ "n0": {
+  "principle": "把\"基因—疾病—通路—药物\"建成一张大图，给每个实体和关系学一个向量，让已知事实在向量空间里满足几何约束，再拿这些向量去猜图里还没有连的边。",
+  "mechanism": "以 TransE 为代表：头实体向量加关系向量应约等于尾实体向量，$\\mathbf{h} + \\mathbf{r} \\approx \\mathbf{t}$，训练用间隔排序损失（F11）：\n\n$$\\mathcal{L} = \\sum_{(h,r,t)} \\max\\!\\left(0,\\ \\gamma + d(\\mathbf{h}+\\mathbf{r},\\ \\mathbf{t}) - d(\\mathbf{h}'+\\mathbf{r},\\ \\mathbf{t}')\\right)$$\n\nRotatE 把关系建模为复数空间里的旋转 $t = h \\circ r,\\ |r_i|=1$，能处理对称、反对称、反转、组合这四类关系模式，是后来药物重定位图谱（如 TxGNN 底层思路）的常用基座。打分高的\"缺失边\"即为候选关联。",
+  "why": "生物医学知识天然是关系型的，且散布在数千万篇文献和几十个数据库里。嵌入把离散符号变成可计算的连续空间，一次训练就能对全图做排序推理，成本远低于逐个假设做湿实验。BenevolentAI 2020 年用这套方法从图谱里捞出巴瑞替尼作为 COVID-19 候选，后来被随机对照试验证实，是这个范式最有名的一次命中。",
+  "co": "BenevolentAI（知识图谱起家，巴瑞替尼案例）、英矽智能 PandaOmics 的图谱模块、TxGNN（哈佛，环节⑥老药新用也用到同源思路）、开源实现 PyKEEN / DGL-KE。",
+  "lim": "热门靶点背后的论文扎堆，图谱越挖越是那些人尽皆知的关联，冷门靶点信号弱。对图谱外的 OOD 靶点基本无能为力。更根本的问题是它只反映关联：A 连 B 可能是第三个因子驱动的，因果性得另找证据。",
+  "papers": [
+   "Bordes et al., \"Translating Embeddings for Modeling Multi-relational Data\", NeurIPS 2013",
+   "Sun et al., \"RotatE: Knowledge Graph Embedding by Relational Rotation in Complex Space\", ICLR 2019",
+   "Richardson et al.（BenevolentAI）, \"Baricitinib as potential treatment for 2019-nCoV acute respiratory disease\", The Lancet 2020"
+  ]
+ },
+ "n1": {
+  "principle": "把蛋白质序列当\"句子\"喂给 Transformer 做掩码语言模型预训练，逼模型为了填回被遮住的氨基酸而自学出结构与功能的统计规律。",
+  "mechanism": "训练目标是掩码语言模型损失（F10）：\n\n$$\\mathcal{L}_{\\mathrm{MLM}} = -\\sum_{i \\in \\mathcal{M}} \\log p_\\theta\\!\\left(x_i \\mid x_{\\setminus \\mathcal{M}}\\right)$$\n\nESM2 最大版本 15B 参数、约 2.5 亿条序列预训练。ESMFold 在 ESM2 表征上接一个结构模块，**不需要多序列比对（MSA）**就能从单条序列直接出三维结构，速度比 AlphaFold2 快约一个数量级，曾用两周时间把 6 亿条宏基因组序列全部折叠，建成 ESM Atlas。零样本突变效应预测直接用掩码位置的对数概率差打分。",
+  "why": "共进化信息本来藏在同源序列比对里，语言模型在大规模预训练后把这些共进化信号压缩进了参数，单序列就能用。对没有同源序列的\"孤儿蛋白\"和设计出来的新蛋白，这是少数能用的办法。",
+  "co": "Meta 开源（权重全公开）；ESM 团队后独立为 EvolutionaryScale，2025 年 11 月被 CZ Biohub 收购。工业界已把 ESM 嵌入当作通用蛋白特征，喂给下游的活性、稳定性、可开发性预测模型，几乎是行业标准件。",
+  "lim": "单序列能承载的信息毕竟有限，遇到复合物、构象变化、配体存在时的结构重排就使不上劲。预测的是静态结构，口袋开闭这类动态问题不归它管。",
+  "papers": [
+   "Rives et al., \"Biological structure and function emerge from scaling unsupervised learning to 250 million protein sequences\", PNAS 2021",
+   "Lin et al., \"Evolutionary-scale prediction of atomic-level protein structure with a language model\", Science 2023"
+  ]
+ },
+ "n2": {
+  "principle": "把蛋白的序列、三维结构、功能注释统一编码成离散 token，用同一个掩码语言模型联合建模，从而既能\"读\"也能\"写\"蛋白。",
+  "mechanism": "结构不再是连续坐标，而是被量化成离散结构 token，与序列 token、功能 token 混排在同一条序列里做掩码预测，目标函数仍是 MLM 损失（F10）的推广。生成时可以给定任意模态组合作为提示词（prompt），例如固定某个功能位点的结构 token、放开其余位置让模型补全，实现对生成过程的可控引导。最大版本 98B 参数，训练用 7710 亿 token（31.5 亿条序列、2.36 亿结构、5.39 亿功能标注）。招牌实验是生成 esmGFP：与已知荧光蛋白序列同一性仅 58%，官方称相当于模拟了 5 亿年自然进化。",
+  "why": "离散 token 化把结构预测里复杂的几何架构问题降维成序列建模问题，可以直接吃 Transformer 的规模化红利；多模态联合建模让\"功能→结构→序列\"的反向设计成为可能，这是 ESM2 这类纯序列模型做不到的。",
+  "co": "EvolutionaryScale（Forge API 开放，小模型开源、非商业许可；2025 年 11 月被 CZ Biohub 收购）。学术与工业界多用于蛋白功能预测与设计候选初筛。",
+  "lim": "esmGFP 是个漂亮的演示，但荧光蛋白是最好做的题目之一，生成蛋白走到药物级验证的案例仍然很少。大模型权重不开源，商用要谈 API 条款，复现和审计都受限。",
+  "papers": [
+   "Hayes et al., \"Simulating 500 million years of evolution with a language model\", Science 2025（2024.7 预印，2025.1 在线发表，DOI: 10.1126/science.ads0018）"
+  ]
+ },
+ "n3": {
+  "principle": "把全生命树的基因组 DNA 当语料训练语言模型，让模型学会基因组的\"语法\"，从而预测突变致病性、生成新的调控元件和序列。",
+  "mechanism": "主干不是 Transformer 而是 StripedHyena 2（卷积+注意力混合算子），目的是把上下文窗口撑到 100 万碱基对——普通注意力的平方复杂度在这个长度下不可行。40B 参数，训练数据 9.3 万亿碱基对，覆盖细菌、古菌、真核。训练目标本质上是 DNA 序列上的下一 token 预测（F10 的自回归版本）。零样本任务包括 BRCA1 等基因的变异致病性分类、非编码突变效应预测、以及生成染色质可及性符合预期的调控序列。",
+  "why": "基因组的功能元件（启动子、增强子、剪接位点）受进化约束，突变致病性等价于\"这个位置在进化语料里有多不可思议\"。语言模型的困惑度天然就是这个量。百万级上下文让它第一次能把调控元件和远端基因放在同一个窗口里建模。",
+  "co": "Arc Institute（非营利研究机构，Patrick Hsu 等）与 NVIDIA 合作训练，权重与代码全开放。下游被各家虚拟细胞和基因调控项目当作基因组特征提取器。",
+  "lim": "从\"序列有多不自然\"到\"成药决策\"之间链条太长：预测突变致病不等于告诉你该开发什么药。模型看的是序列统计，组织特异性、细胞状态这些决定基因功能的环境变量它拿不到。计算开销也大，全基因组建模不是普通实验室玩得起的。",
+  "papers": [
+   "Brixi et al., \"Genome modeling and design across all domains of life with Evo 2\", Nature 2026（2025.2 预印，2026.3 正式发表，DOI: 10.1038/s41586-026-10176-5）"
+  ]
+ },
+ "n4": {
+  "principle": "把单细胞转录组里\"哪个基因表达了多少\"当作语言来预训练 Transformer，得到细胞与基因的通用表征，下游接细胞注释、扰动预测、网络推断等任务。",
+  "mechanism": "三个模型思路同宗、token 化方式不同：scGPT 用基因名+表达量分箱做生成式预训练（3300 万细胞）；Geneformer 把每个细胞的基因按表达量排序成\"句子\"（rank encoding），3000 万细胞预训练；scFoundation 把表达量连续值直接映射成嵌入，约 5000 万细胞、1 亿参数。目标函数都是掩码重建（F10 的变体）。预训练完冻结主干，下游任务只需少量微调。",
+  "why": "单细胞数据噪声大、批次效应重、每个数据集都很稀疏，单点训练的小模型很难迁移。大规模预训练把跨数据集共享的基因共表达结构压进参数，理论上小样本下游任务也能起点更高。从患者组织单细胞数据里找疾病相关细胞亚群、再反推该亚群的驱动基因，是这套模型在靶点发现上的标准用法。",
+  "co": "三个模型全部开源（scGPT 来自多伦多大学 Bo Wang 组，Geneformer 来自 Broad，scFoundation 来自 BioMap/清华）。Xaira 的 X-Cell、Arc 的 State 都以 scGPT 或同类编码器做初始化，说明这批模型已经成了虚拟细胞的\"底座件\"。",
+  "lim": "2025 年以来好几篇第三方评测泼了冷水：零样本场景下这批基础模型在细胞注释、扰动预测上经常打不过线性回归或简单基线，换一批没见过的细胞效果大幅缩水。问题主要出在数据而非架构——单细胞数据集的分布差异太大，预训练学到的\"通用性\"被高估了。",
+  "papers": [
+   "Theodoris et al., \"Transfer learning enables predictions in network biology\"（Geneformer）, Nature 2023",
+   "Cui et al., \"scGPT: toward building a foundation model for single-cell multi-omics using generative AI\", Nature Methods 2024",
+   "Hao et al., \"Large-scale foundation model on single-cell transcriptomics\"（scFoundation）, Nature Methods 2024"
+  ]
+ },
+ "n5": {
+  "principle": "给模型看\"一个细胞现在的状态 + 一个扰动（敲基因 / 加药）\"，让它直接预测扰动后的转录组——把虚拟细胞变成一个可查询的函数。",
+  "mechanism": "两个组件：SE（State Embedding）把单个细胞的转录组压成向量，训练目标是让一个扰动实验里的多个细胞嵌入在空间里聚拢；ST（State Transition）以一组对照细胞的嵌入集合为输入、以扰动标签为条件，输出扰动后细胞集合的嵌入分布——输入输出都是\"集合\"而非单细胞，用集合到集合的 Transformer 实现。训练数据是超过 1 亿个扰动细胞（Tahoe-100M 等公开 Perturb-seq 数据集）。Arc 官方称它是首个在扰动预测上稳定超过线性基线的模型。",
+  "why": "之前的模型大多在\"单细胞→单细胞\"层面做预测，被批次效应和噪声淹没。State 改在\"细胞群体→细胞群体\"层面建模，把个体差异平均掉，信号噪声比一下子上来了。对药企的用法很直接：先 in silico 筛一遍\"敲哪个基因、细胞往哪走\"，再决定做哪些湿实验。",
+  "co": "Arc Institute 开源（权重+代码）；2025 年 Arc 办的 Virtual Cell Challenge 把它当基准底座。2026 年 3 月 Arc 又发了 Stack（in-context learning 版本）。被广泛用于虚拟细胞方向的对比基线。",
+  "lim": "建模范围只到 RNA 层：扰动引起的蛋白水平、代谢物变化不在模型里，而很多药效恰恰发生在那些层面。2026 年 Virtual Cell Challenge 的结果显示，跨细胞类型、跨实验室的泛化仍然没解决，换种细胞就得重新掂量。",
+  "papers": [
+   "Adduri, Abudayyeh et al.（Arc Institute）, \"Predicting cellular responses to perturbation across diverse contexts with State\", Cell 2025"
+  ]
+ },
+ "n6": {
+  "principle": "用扩散语言模型（不是自回归）逐步把\"对照细胞的基因表达\"改写成\"扰动后的表达\"，同时交叉注意力查询六种外部生物学先验。",
+  "mechanism": "架构是在 scGPT 编码器基础上继续预训练的扩散 LM：推理时不一步步自回归生成，而是迭代地把对照表达值\"替换\"成扰动表达值，每步精修一次。关键设计是 11 层交叉注意力，查询外部先验嵌入——LLM 文本、ESM-2 蛋白嵌入、STRING 互作网络、DepMap 遗传依赖、JUMP Cell Painting 形态学、scGPT 基因嵌入（消融显示 STRING 和 ESM-2 贡献最大）。配套数据集 X-Atlas/Pisces 是目前最大的 CRISPRi Perturb-seq 资源：2560 万个扰动单细胞、16 种细胞环境。旗舰版 X-Cell-Ultra 49 亿参数，是目前最大的因果扰动模型。",
+  "why": "论文的核心发现不在模型而在规模定律：泛化瓶颈是\"扰动 × 细胞环境\"的组合数，数据规模和模型容量同步放大时性能持续改善——这为\"继续砸钱做扰动数据\"提供了直接证据。多模态先验相当于给模型一本生物化学参考书，遇到训练集里没见过的基因也能从先验里查信息。",
+  "co": "Xaira Therapeutics（2024 年 $10 亿启动的明星公司）；部分数据与模型已向学界开放。直接对标 Arc 的 State。",
+  "lim": "还是预印本，没过同行评审。训练用的 CRISPRi 都是基因敲低，药物扰动（小分子、剂量梯度）的化学空间不在里面，离\"预测候选分子的细胞效应\"还有距离。公司未上市也无临床分子，技术值得跟踪但不是可直接映射的投资标的。",
+  "papers": [
+   "Wang et al.（Xaira）, \"X-Cell: Scaling Causal Perturbation Prediction Across Diverse Cellular Contexts via Diffusion Language Models\", bioRxiv 2026（DOI: 10.64898/2026.03.18.712807）"
+  ]
+ },
+ "n7": {
+  "principle": "把组学数据、文献、专利、临床试验记录全部塞进一个打分引擎，按\"新颖性、可信度、可成药性、安全性、商业可行性\"等多维度给每个候选靶点算综合分，输出排序清单。",
+  "mechanism": "不是单一模型而是管线：iPANDA 通路扰动分析做组学降维（把基因表达映射到信号通路活性得分），文本引擎从数千万出版物/专利/基金里抽实体和关系（图谱模块见节点 1），最后一组打分模型按预设维度加权合成靶点评分。平台方披露的数据底座：130 万疾病组学样本、4700 万出版物、550 万专利、近百万临床试验记录。",
+  "why": "靶点发现的真实瓶颈不是算力而是信息整合——一个靶点的证据散在组学、文献、专利、临床数据四种异构来源里，人读不过来。PandaOmics 的最硬证据是 TNIK：平台把它列为特发性肺纤维化头号新靶点，后续 Chemistry42 设计出 rentosertib，2025 年 6 月 Nature Medicine 发表 IIa 期阳性结果（60mg 组 FVC +98.4 mL vs 安慰剂下降），是全球首个\"AI 发现靶点 + AI 设计分子\"双标签且有人体疗效数据的全链条案例。",
+  "co": "Insilico Medicine（2025 年 12 月港股上市，IPO 募资 22.77 亿港元）。平台对外授权（礼来、复星等合作中均涉及），也有学术合作案例（ALS 靶点、肝癌双功能靶点 PRPF19/MAPK9 等）。",
+  "lim": "说到底成功的全链条案例只有 TNIK 一个，样本量撑不起\"方法普适\"的结论。打分权重和模型组合是黑箱，外部客户没法审计某个靶点为什么排第一。底层数据全是公开来源，竞争对手理论上能搭出类似的东西，护城河在工程整合而非数据独占。",
+  "papers": [
+   "Kamya et al., \"PandaOmics: An AI-Driven Platform for Therapeutic Target and Biomarker Discovery\", J. Chem. Inf. Model. 2024",
+   "Ren et al., \"A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models\", Nature Biotechnology 2024",
+   "Xu et al.（rentosertib IIa 期）, Nature Medicine 2025"
+  ]
+ },
+ "n8": {
+  "principle": "不给模型任何先验假设，直接把\"敲掉基因 X 的细胞长什么样\"高通量拍下来，用深度学习从形态学特征里反推基因功能和基因—疾病关系。",
+  "mechanism": "底层技术是 Cell Painting：用六种荧光染料给细胞器染色，成像后提取上千维形态学特征。Recursion 的做法是把这套成像流程工业化——自动化湿实验室每周跑数百万个实验，图像过 CNN/ViT 编码成表型嵌入，再算\"敲基因 A 的表型\"与\"疾病表型\"\"已知药物表型\"在嵌入空间里的距离，距离近即提示功能关联。本质是拿表型当全细胞水平的\"读出\"，绕开\"先懂机制再找靶点\"的传统路径。",
+  "why": "很多疾病的机制根本没搞清楚，基于假设的靶点发现无从下手；表型筛选是\"先看现象、后补机制\"，历史上大量重磅药物就是这么来的。AI 的贡献是把表型比较的吞吐量提升了几个数量级，并且能在高维形态空间里看出人眼看不出的相似性。Recursion 多个临床管线（如 REC-4881 治 FAP，II 期息肉负荷降 43–53%）都源于这套表型图谱。",
+  "co": "Recursion（RXRX，自建 BioHive-2 超算；开源了 RxRx 系列表型数据集，JUMP-Cell Painting 联盟也是这类数据的公共版本）。Xaira 的 X-Cell 也把 JUMP 形态学嵌入当先验用，说明表型数据已是通用资产。",
+  "lim": "从\"表型像\"到\"这是个可成药靶点\"之间还差着好几步验证，命中率提升不等于临床成功率提升——Recursion 2025 年 5 月砍了 3 个临床项目，就是这条链路上损耗的现实注脚。平台资本开支极重，机器人实验室加超算不是谁都抄得动，但这也意味着故事讲得再好，最后还得管线读出来说话。",
+  "papers": [
+   "Bray et al., \"Cell Painting, a high-content image-based assay for morphological profiling using multiplexed fluorescent dyes\", Nature Protocols 2016",
+   "Fay et al.（Recursion）, \"RxRx1: A dataset for evaluating experimental batch correction methods\", NeurIPS Datasets 2020（及后续 RxRx3 系列）"
+  ]
+ },
+ "n9": {
+  "principle": "统计上有个硬结论：有人体遗传学证据（GWAS 关联、罕见病功能缺失突变）撑腰的靶点，临床成功率大约是没有的两倍——那就系统性地给每个\"基因—疾病\"对算一个遗传学证据分，按分排靶点。",
+  "mechanism": "以 Open Targets 为代表：汇总 GWAS Catalog、UK Biobank、罕见病数据库（ClinVar、Orphanet）、体细胞突变、表达关联等多源证据，每类证据按统计强度和效应大小打分，再按数据源的可信度加权合成为 0–1 的关联分。各家药企和平台公司的私有版本会在上面叠自有队列数据（如 Tempus 的临床基因组库）和机器学习重打分。这里的\"AI\"含量其实不高，大头是统计遗传学和数据工程。",
+  "why": "这是少数有 meta 层面大样本统计背书的策略：Nelson et al. 2015 年在 Nat Genet 上分析历史管线，发现有人类遗传证据的靶点成功率约两倍；King et al. 2019 年用 GWAS 数据复核出 2.6 倍。逻辑也直白——人体里已经\"做过实验\"（天然功能缺失突变携带者没有严重问题），安全性和有效性的先验都更好。",
+  "co": "Open Targets（EMBL-EBI + 药企联盟，全公开，业界标准件）；Tempus（TEM，靠自有临床基因组数据库做差异化）；各大药企内部几乎都有同类系统。",
+  "lim": "公开数据源人人都用，差异化很小，很难构成独家壁垒——真正的区分度在谁手里有独占的大型队列。另外两倍成功率听着不错，但基数低，绝对成功率仍然只有个位数百分比，它改善的是赔率，不是确定性。",
+  "papers": [
+   "Nelson et al., \"The support of human genetic evidence for approved drug indications\", Nature Genetics 2015",
+   "King et al., \"Are drug targets with genetic support twice as likely to be approved?\", PLoS Genetics 2019",
+   "Ochoa et al., \"Open Targets Platform: supporting systematic drug–target identification and prioritisation\", Nucleic Acids Research（年度更新）"
+  ]
+ },
+ "n10": {
+  "principle": "把多序列比对（MSA）里的共进化信号喂给一个专门设计的 Transformer（Evoformer），端到端直接输出蛋白三维原子坐标。",
+  "mechanism": "两个关键组件：Evoformer 在\"序列×序列\"的 MSA 表征和\"残基×残基\"的配对表征之间反复交换信息（注意力机制，F1）；结构模块用不变点注意力（IPA）把更新后的表征映射为每个残基的刚体旋转+平移，直接回归原子坐标。训练还用了 recycling——把上一次预测的结构重新喂回输入迭代精修。",
+  "why": "在它之前，结构预测卡在\"共进化信号提取不充分\"几十年。Evoformer 第一次让 MSA 和接触图两类信息互相校正，CASP14 上 GDT-TS 中位数 92.4，达到实验精度水平，50 年的蛋白质折叠问题就此翻篇（2024 年诺贝尔化学奖）。对药研的直接后果：AlphaFold DB 放出 2 亿+ 预测结构，\"这个靶点没结构做不了 SBDD\"的借口基本消失。",
+  "co": "DeepMind 开源（代码+权重+数据库），全行业基础设施。几乎所有结构基药物设计公司（Schrödinger、Relay、晶泰等）的工作流里都有它。",
+  "lim": "输出的是单一静态构象，结合口袋的开闭、诱导契合、构象动态全都不在模型里。抗体-抗原复合物、点突变对结构的影响这些场景精度明显掉。另外它学的是\"进化上最常见的构象\"，对非天然折叠无能为力。",
+  "papers": [
+   "Jumper et al., \"Highly accurate protein structure prediction with AlphaFold\", Nature 2021"
+  ]
+ },
+ "n11": {
+  "principle": "扔掉 Evoformer 的 MSA 重度依赖，改用 Pairformer + 扩散模块，把\"蛋白+核酸+小分子+离子\"统一表示成原子集合，一个模型预测所有生物分子复合物。",
+  "mechanism": "扩散生成取代 AF2 的结构回归：先给原子坐标加噪（F3），再训练网络逐步去噪（F4）：\n\n$$q(x_t \\mid x_{t-1}) = \\mathcal{N}\\!\\left(\\sqrt{1-\\beta_t}\\, x_{t-1},\\ \\beta_t \\mathbf{I}\\right), \\qquad \\mathcal{L} = \\mathbb{E}\\left[\\ \\lVert \\epsilon - \\epsilon_\\theta(x_t, t) \\rVert^2\\ \\right]$$\n\n扩散框架天然支持任意化学组成，不需要为每种分子类型设计专门模块。官方报告蛋白-配体复合物精度较传统对接工具提升 50% 以上。",
+  "why": "药物研发要的从来不是\"蛋白长什么样\"，而是\"蛋白和小分子在一起长什么样\"。AF3 第一次把复合物预测做到可用级别，让结构基设计从\"有共晶结构的靶点\"扩展到\"只有序列的靶点\"。",
+  "co": "Isomorphic Labs 持有商业化权益（与礼来 $17 亿、诺华 $12 亿、强生里程碑合作）；2024 年 11 月开放推理代码与非商用权重，商用需谈许可。",
+  "lim": "发布时不开源的决策直接催生了 Boltz/Chai 一整条开源复现赛道，商业壁垒被自己削弱。输出仍然是结构而非亲和力——分子\"摆得对不对\"它管，\"粘得牢不牢\"得另配模型。扩散采样还会偶发产生物理上不合理的姿态（手性错误、原子重叠），下游要过 PoseBusters 这类检查。",
+  "papers": [
+   "Abramson et al., \"Accurate structure prediction of biomolecular interactions with AlphaFold 3\", Nature 2024"
+  ]
+ },
+ "n12": {
+  "principle": "AF3 架构的全开源复现与扩展；Boltz-2 在其上加了亲和力预测头，让同一个模型同时回答\"怎么结合\"和\"结合多强\"。",
+  "mechanism": "结构与 AF3 同源（Pairformer + 原子级扩散，F3/F4）。Boltz-2 的关键创新是蒸馏：先用物理方法（FEP/MD）在百万级复合物上跑出亲和力标签，再训练一个接在结构表征上的预测头去学这些标签——相当于把昂贵物理计算的知识压缩进神经网络。输出分两种：hit 发现用二分类概率（是不是 binder），先导排序用连续亲和力值。单 GPU 约 20 秒出结构+亲和力，官方报告在 FEP+ 基准上 Pearson 约 0.62–0.66，接近开源 FEP 流程（OpenFE 约 0.66，商业 FEP+ 约 0.78），速度快 1000 倍以上；CASP16 亲和力赛道开箱即用超过所有参赛方法。",
+  "why": "FEP 的精度来自物理模拟的采样，成本也来自采样。Boltz-2 赌的是：FEP 算出来的结果里存在可学习的规律，蒸馏一次就能免掉之后每次的采样成本。MIT 协议全开源（权重+推理+训练代码）意味着任何公司都能在自己的化学型上微调——2026 年已有独立研究证明针对特定靶点微调后相关性可再提升。",
+  "co": "MIT Jameel Clinic 开发、Recursion 共建；2026 年 1 月团队成立 Boltz PBC（$2800 万种子轮，Amplify/a16z 参投，辉瑞、武田合作）。工业界已被广泛集成进筛选流程。",
+  "lim": "亲和力精度和基准、化学型强相关：官方在 Recursion 内部靶点上的表现明显弱于公开基准，换体系就得重新验证。PROTAC、大环这类新模态出了训练域误差更大。结构姿态同样要过 PoseBusters 物理检查。注意论文至今仍是预印本。",
+  "papers": [
+   "Wohlwend et al., \"Boltz-1: Democratizing Biomolecular Interaction Modeling\", bioRxiv 2024",
+   "Passaro et al., \"Boltz-2: Towards Accurate and Efficient Binding Affinity Prediction\", bioRxiv 2025"
+  ]
+ },
+ "n13": {
+  "principle": "又一支 AF3 级复现，但走差异化路线：支持把实验数据（质谱交联、表位图谱、结合约束）作为条件输入，引导结构预测。",
+  "mechanism": "架构同为扩散共折叠（F3/F4），两个差异点：单序列模式不依赖 MSA（低同源序列也能跑）；约束条件接口——实验测到的\"这两个残基距离近\"\"这个表位参与结合\"可以直接作为先验注入扩散采样过程。商业策略是开源权重（Apache-2.0）+ 收费 API。",
+  "why": "纯序列信息有时不够定结构，但实验约束往往是现成的。把实验数据当条件而不是事后验证，等效于给扩散过程加了导航，在抗体-抗原这类难例上收益明显。",
+  "co": "Chai Discovery（OpenAI、Thrive 投资；2026 年与礼来、辉瑞、诺华签约）。按收录口径（无临床分子）不展开公司层面。",
+  "lim": "和 AF3 同一个天花板：出结构不出亲和力，构象动态不在范围内。公司自己的商业前景取决于能否在 Boltz 全开源的压力下守住差异化。",
+  "papers": [
+   "Chai Discovery, \"Chai-1: Decoding the molecular interactions of life\", bioRxiv 2024"
+  ]
+ },
+ "n14": {
+  "principle": "AF3 的 PyTorch 开源复现，目标是给社区一个可训练、可审计、可商用（Apache-2.0）的完整基线。",
+  "mechanism": "严格对齐 AF3 论文架构（Pairformer + 扩散模块），同时补齐官方没公开的工程细节：训练配方、数据管线、评估脚本全部放出。后续版本加了亲和力头和约束条件支持，追着 Boltz-2 的功能走。",
+  "why": "AF3 官方只给了推理代码没给训练代码，社区想在自己的数据上继续训练就必须有人把训练侧补全。Protenix 填的就是这个空——它的价值不在创新而在完整性和许可证干净。",
+  "co": "字节跳动 Seed 团队（平台方，非药企）；被多家公司拿去做二次开发的底座。",
+  "lim": "本质是复现工程，没有独有数据和独有机制，谈不上技术壁垒。复现精度与 AF3/Boltz 仍有可测差距，且跟随者定位决定它永远慢半拍。",
+  "papers": [
+   "Chen et al.（ByteDance）, \"Protenix: Advancing Structure Prediction Through a Comprehensive AlphaFold3 Reproduction\", bioRxiv 2025"
+  ]
+ },
+ "n15": {
+  "principle": "Isomorphic 的闭源统一药物设计引擎：结构预测、亲和力估计、结合口袋发现三件事一个模型包圆，不对外公开任何技术细节。",
+  "mechanism": "官方技术报告没披露架构，外界推测是 AF3 路线的深度迭代。披露的只有基准数字：在 Runs N' Poses 这类\"与训练集差异大\"的蛋白-配体难例上，精度约 50% vs AF3 的 23.3%（翻倍）；抗体-抗原高保真预测 39% vs 17%（2.3 倍）；声称亲和力预测超过 FEP+ 这类物理方法且不需要实验晶体结构；仅凭序列即可以秒级发现隐藏变构口袋（演示案例是 CRBN，其第二个口袋人类花了 15 年才找到）。哥大 AlQuraishi 评价其为\"AlphaFold 4 量级的突破\"。",
+  "why": "如果数字属实，意义在于结构预测的误差已经降到\"可以直接指导合成决策\"的区间，而且覆盖小分子、抗体、多肽、分子胶四种模态。但请注意上一句的\"如果\"。",
+  "co": "Isomorphic Labs（Alphabet 子公司；2025.3 首轮外部融资 $6 亿 Thrive 领投，2026.5 B 轮 $21 亿；与礼来、诺华、强生合作，潜在里程金合计约 $30 亿；首批 AI 设计分子预计 2026 年底进 I 期）。",
+  "lim": "所有数字出自公司自己发布的技术报告，没有同行评审、没有第三方复现、模型权重和代码都不放——外界连验证的门都没有。完全闭源意味着想在二级市场沾这个能力只能买 Alphabet，而 Alphabet 的体量里这块业务又是沧海一粟。\"精度翻倍\"和\"能设计出临床成功的药\"之间，还隔着该公司至今为零的人体数据。",
+  "papers": [
+   "Isomorphic Labs, \"IsoDDE Technical Report\", 公司技术报告 2026（非同行评审）"
+  ]
+ },
+ "n16": {
+  "principle": "把分子对接从\"采样+打分\"两步流程改成一步：在配体的平移、旋转、键扭转自由度上做扩散生成，直接采样结合姿态。",
+  "mechanism": "对接的自由度不是欧氏空间而是 SE(3) 李群（旋转）加环面（可旋转键），DiffDock 在这个流形上定义扩散过程（F3 的几何推广），逆过程由一个等变神经网络打分引导（F4 的流形版本）。同时输出置信度模型对采样姿态排序，实现 blind docking（不指定口袋）。",
+  "why": "传统对接的瓶颈是采样搜索空间太大、打分函数太糙。扩散模型直接从数据里学姿态分布，把搜索变成了生成。DiffDock-L 在 PDBBind 上把 Top-1 成功率推到当时的新高，证明了生成式路线在对接上的可行性。",
+  "co": "MIT（Corso、Stärk 等，后并入 Boltz 团队）；学术基准标准件，也是 Boltz/Chai 的对比基线。",
+  "lim": "有个经典坑必须知道：原版 DiffDock 在 PoseBusters 物理合法性检查上只有 12% 的姿态同时位置准、物理站得住，而传统工具 Vina 是 58%、GOLD 是 55%——深度模型学姿态分布学得快，但没把化学键长键角这些硬约束学扎实。实际管线里它后面必须接 GNINA 重打分加物理过滤，不能裸用。",
+  "papers": [
+   "Corso et al., \"DiffDock: Diffusion Steps, Twists, and Turns for Molecular Docking\", ICLR 2023",
+   "Corso et al., \"Deep Confident Steps to New Pockets: Strategies for Docking Generalization\"（DiffDock-L）, ICLR 2024"
+  ]
+ },
+ "n17": {
+  "principle": "不推倒传统对接，只在后面加一层 3D CNN 重打分：传统采样负责\"提出候选姿态\"，深度学习负责\"挑哪个对\"。",
+  "mechanism": "配体-蛋白复合物栅格化成 3D 体素网格（按原子类型分通道），喂给 3D 卷积网络，输出姿态质量和亲和力评分。可串接在 smina/AutoDock Vina 的采样结果后面做重排序，是\"物理采样 + 学习打分\"混合工作流的代表。",
+  "why": "采样和打分是两种难度的问题：采样的搜索空间大但有物理可引导，打分的规律难写但可学习。各取所长，工程上稳健、结果可审计，是目前生产环境里最常用的深度对接方案。",
+  "co": "开源（匹兹堡大学 Koes 组）；被大量虚拟筛选管线用作打分层。",
+  "lim": "CNN 打分换一类化学骨架就要重新校准，不能一套参数通吃。3D 体素化丢失部分几何精度，分辨率提升又被显存卡住。作为\"重打分\"角色，它的上限受限于上游采样质量——采不出来的姿态它也没法打分。",
+  "papers": [
+   "McNutt et al., \"GNINA 1.0: molecular docking with deep learning\", J. Cheminform. 2021"
+  ]
+ },
+ "n18": {
+  "principle": "不学习、纯物理：对接靠系统采样和经验打分函数，亲和力靠自由能微扰（FEP）做显式分子动力学模拟，行业金标准基线。",
+  "mechanism": "Glide：层级式采样（先粗筛姿态再精修）+ 经验打分函数近似结合自由能 $\\Delta G_{\\mathrm{bind}} = -RT \\ln K_d$（F8）。FEP+ 用 Zwanzig 公式沿炼金术路径逐步把配体 A 微扰成 B，对每一步的势能差做指数平均（F9）：\n\n$$\\Delta G_{A \\to B} = -k_B T \\ln \\left\\langle \\exp\\!\\left(-\\frac{U_B - U_A}{k_B T}\\right) \\right\\rangle_A$$\n\n显式水溶剂、显式蛋白柔性，精度约 1 kcal/mol（相当于亲和力差 5 倍以内），是先导优化阶段公认的参照系。",
+  "why": "物理模型的可解释性和外推可靠性是数据驱动方法比不了的——不依赖训练集里有没有见过的化学型。它的商业案例也是 AI 制药史上最贵的一笔：Nimbus 用 Schrödinger FEP+ 优化的 TYK2 抑制剂 zasocitinib，以 $40 亿首付+$20 亿里程金卖给武田，2026 年已获 FDA 优先审评。",
+  "co": "Schrödinger（SDGR）；Nimbus（私企，zasocitinib 已报 NDA）。评估任何 AI 对接/亲和力模型，对照组都应该是它。",
+  "lim": "又慢又贵：一个 FEP 计算要小时级 GPU 算力，没法拿去做百万级筛选；license 费用也是中小团队的门槛。AI 亲和力模型（Boltz-2 这类）切的就是\"精度打八折、速度快千倍\"的空档——先粗筛再交给 FEP 复核的分层用法正在变成主流。",
+  "papers": [
+   "Friesner et al., \"Glide: A New Approach for Rapid, Accurate Docking and Scoring\", J. Med. Chem. 2004",
+   "Wang et al., \"Accurate and Reliable Prediction of Relative Ligand Binding Potency... (FEP+)\", JACS 2015"
+  ]
+ },
+ "n19": {
+  "principle": "最早的深度对接思路之一：3D 卷积网络直接读蛋白-配体复合物网格，预测结合活性，用来扫十亿级虚拟化合物库。",
+  "mechanism": "2015 年提出，比扩散对接早八年：复合物结构体素化后过 3D CNN 输出活性概率。工程重点是吞吐量——针对超大规模库筛选做了整套分布式优化，号称能筛 160 亿分子。",
+  "why": "证明了一件事：打分函数可以完全从结构数据里学出来，不必手写能量项。2017–2020 年间 Atomwise 是这个范式的旗手，与多家药企签过筛选合作。",
+  "co": "Atomwise（私企，早期明星，2020 年后声量明显减弱，未有自推分子进入后期临床）。",
+  "lim": "这是投研里很有教育意义的一个案例：筛得准和临床能成是两回事。公司成立十余年、筛选合作无数，但至今没有一个自己推进的分子走到后期临床。超大规模筛选的命中率故事，在没有湿实验闭环承接时兑现不了价值。",
+  "papers": [
+   "Wallach et al., \"AtomNet: A Deep Convolutional Neural Network for Bioactivity Prediction in Structure-based Drug Discovery\", arXiv 2015"
+  ]
+ },
+ "n20": {
+  "principle": "不押单一算法：把 30+ 种生成模型（GAN/VAE/RL/扩散）集成在一个平台里，按项目需要组合调用，结构基和配体基生成都能做。",
+  "mechanism": "平台化架构：前端是蛋白口袋或配体约束条件，中间是生成模型池（每种模型在分子表征和采样策略上各有偏置），后端是多目标打分（活性预测、ADMET、可合成性、新颖性）加主动学习筛选。关键设计是集成——不同生成器产出的分子并集覆盖面远大于任何单一模型。",
+  "why": "分子生成没有\"银弹\"算法，不同 scaffold、不同约束下最优模型不同，集成路线的命中率优势来自多样性互补。最硬证据是 rentosertib（ISM001-055）：平台设计、全球首个 AI 全程发现+设计药物，已进 III 期，IIa 期数据 2025 年 6 月发表于 Nature Medicine。",
+  "co": "Insilico Medicine（港股 2025.12 上市）。",
+  "lim": "平台内部怎么组合模型、各模块贡献多少，外部完全看不到，尽调时只能看产出端（管线进度）无法看过程端。对license客户而言，\"30 个模型\"是卖点也是黑箱——出了问题归因都困难。",
+  "papers": [
+   "Ivanenkov et al., \"Chemistry42: An AI-Driven Platform for Molecular Design and Optimization\", J. Chem. Inf. Model. 2023"
+  ]
+ },
+ "n21": {
+  "principle": "先用大量已知分子训练一个\"会写分子\"的先验 RNN，再用强化学习往多目标打分高的方向微调它，让生成朝\"活性好+ADMET 好+好合成\"收敛。",
+  "mechanism": "生成器按序列逐 token 采样 SMILES，每个分子是一个 episode，打分函数给出奖励 R(x)，用策略梯度更新生成器（F6）：\n\n$$\\nabla_\\theta J(\\theta) = \\mathbb{E}_{x \\sim \\pi_\\theta}\\left[\\,R(x)\\, \\nabla_\\theta \\log \\pi_\\theta(x)\\,\\right]$$\n\n同时加先验锚定项，防止微调后生成器偏离合法化学空间。打分函数可任意拼装：QSAR 活性模型、对接分数、合成可达性、专利规避约束。",
+  "why": "把\"分子设计\"形式化成了标准的策略优化问题，目标函数完全可定制——这是它从 2017 年至今仍是药企标配的原因。开源、成熟、工程文档齐全。",
+  "co": "阿斯利康团队开发并开源（REINVENT 4 已重构为模块化框架）；阿斯利康及多家药企内部在用。",
+  "lim": "经典问题是 reward hacking：生成器会找到打分函数的漏洞，批量产出分数漂亮但化学上荒谬或根本合成不出来的分子——打分函数哪里不准，生成就往哪里钻。防它只能靠更严的下游过滤（逆合成可行性、物理检查），等于把问题后移了一层。",
+  "papers": [
+   "Olivecrona et al., \"Molecular de-novo design through deep reinforcement learning\", J. Cheminform. 2017",
+   "Blaschke et al., \"REINVENT 2.0: An AI Tool for De Novo Drug Design\", J. Chem. Inf. Model. 2020"
+  ]
+ },
+ "n22": {
+  "principle": "把蛋白口袋的三维结构当条件，让扩散模型直接在口袋内逐步生成 3D 分子的原子坐标和类型——分子是\"长\"在口袋里的。",
+  "mechanism": "以口袋原子为条件上下文，在配体的原子坐标+原子类型联合空间上定义扩散（F3），用等变图网络保证旋转平移不变性，去噪目标同 F4。DiffSBDD 还支持固定部分子结构做 inpainting（只重新生成分子的某个片段，用于骨架跃迁和侧链优化）；Pocket2Mol 用自回归几何生成替代扩散；TargetDiff 联合生成姿态并预测亲和力。",
+  "why": "相比 SMILES 生成，3D 条件生成直接利用了结合口袋的几何互补性，生成分子天然带着结合姿态信息，理论上起点高于\"先生成再对接\"。学术基准上这类模型的类药性、结合能分布都明显优于 2D 生成基线。",
+  "co": "学术开源为主（DiffSBDD 来自洛桑理工/微软研究院；Pocket2Mol/TargetDiff 来自清华团队）；已被多家平台公司集成进生成管线。",
+  "lim": "生成和落地之间卡着两道筛子：合成可行性（3D 空间里拼得出来的分子化学家未必做得出来）和物理合法性（键长键角、空间位阻）。更要命的是湿实验命中率缺乏公开数据——benchmark 上的漂亮分布和真到实验室合成测试之间，公开证据链几乎是断的。",
+  "papers": [
+   "Schneuing et al., \"Structure-based drug design with equivariant diffusion models\"（DiffSBDD）, Nature Computational Science 2024",
+   "Peng et al., \"Pocket2Mol: Efficient Molecular Sampling Based on 3D Protein Pockets\", ICML 2022",
+   "Guan et al., \"3D Equivariant Diffusion for Target-Aware Molecule Generation and Affinity Prediction\"（TargetDiff）, ICLR 2023"
+  ]
+ },
+ "n23": {
+  "principle": "把分子编码进连续潜空间，在潜空间里插值、优化，再解码回分子——让\"搜索更好分子\"变成连续优化问题。",
+  "mechanism": "变分自编码器：编码器把分子图压成潜向量 z，解码器重建分子，训练目标是证据下界（F5）：\n\n$$\\mathcal{L}_{\\mathrm{ELBO}} = \\mathbb{E}_{q_\\phi(z\\mid x)}[\\log p_\\theta(x \\mid z)] - D_{\\mathrm{KL}}\\!\\left(q_\\phi(z \\mid x)\\,\\Vert\\,p(z)\\right)$$\n\nJT-VAE 的巧思是把分子拆成化学子结构（环、官能团）的\"结树\"再编码，保证解码出的分子化学合法；MoLeR 进一步用 scaffold+motif 逐步扩展的方式生成。潜空间连续后可接贝叶斯优化沿性质梯度爬坡。",
+  "why": "2018–2021 年间的主流路线，第一次让\"定向分子优化\"有了可微分的操作界面。潜空间+贝叶斯优化这套组合拳至今仍是多参数优化的常用框架。",
+  "co": "学术开源（MIT、微软研究院）；多家平台的早期生成模块基于此，现多被扩散和 RL 路线取代或包围。",
+  "lim": "解码有效率始终是个问题——潜空间里光滑的邻域解码出来可能是非法分子。生成多样性受潜空间结构限制，化学新颖性不足。如今基本退居二线，价值更多在\"潜空间优化框架\"而非生成器本身。",
+  "papers": [
+   "Jin et al., \"Junction Tree Variational Autoencoder for Molecular Graph Generation\", ICML 2018",
+   "Maziarz et al., \"Learning to Extend Molecular Scaffolds with Structural Motifs\"（MoLeR）, ICLR 2022"
+  ]
+ },
+ "n24": {
+  "principle": "不手工设计分子描述符，让图神经网络直接在分子图上做消息传递，自己学出和性质相关的表征。",
+  "mechanism": "有向消息传递：每条化学键是有向边，键的隐藏状态沿键方向聚合邻居信息（F2 的有向版本）：\n\n$$h_v^{(k+1)} = \\mathrm{UPDATE}\\!\\left(h_v^{(k)},\\ \\mathrm{AGGREGATE}\\!\\left(\\{h_u^{(k)} : u \\in \\mathcal{N}(v)\\}\\right)\\right)$$\n\n若干层后把原子/键表征池化成分子级向量，接前馈网络输出性质预测。支持多任务（几十个端点共享表征）、可加分子级特征（描述符、指纹拼接）。",
+  "why": "手工指纹（ECFP 等）是定死的编码，和特定性质的相关性碰运气；消息传递让表征跟着预测目标学，任务适配性天然更好。开源、文档全、benchmark 覆盖广，已成学术与工业界最常用的 QSAR 基线。",
+  "co": "MIT 开源（后由 ML 化学社区维护，2024 年发布 2.0）；几乎所有做性质预测的团队都拿它当过基线。",
+  "lim": "有一个反直觉的事实必须记住：在 TDC ADMET 基准上，ECFP 指纹+梯度提升树这种老办法在多个任务上打平甚至超过 Chemprop 这类深度模型。深度方法的优势主要在数据量大、骨架多样的场景，小数据集上并不稳赢。评估公司宣传时这是现成的锚。",
+  "papers": [
+   "Yang et al., \"Analyzing Learned Molecular Representations for Property Prediction\", J. Chem. Inf. Model. 2019",
+   "Heid et al., \"Chemprop: A Machine Learning Package for Chemical Property Prediction\", J. Chem. Inf. Model. 2024"
+  ]
+ },
+ "n25": {
+  "principle": "给分子预训练一个\"三维理解力\"：预训练任务不是预测性质，而是重建被噪声破坏的 3D 原子坐标，逼模型把几何规律学进参数。",
+  "mechanism": "Transformer 主干，输入是原子类型+3D 坐标，自注意力里显式编码原子间距离（F1 的几何改造版）。预训练任务有两个：坐标去噪（随机扰动坐标后要求还原）和被掩码原子的表征重建。下游接性质预测、构象生成、对接打分，共用同一套预训练权重。曾获 NeurIPS 2022 分子性质预测竞赛冠军。",
+  "why": "分子的性质本质上是 3D 结构决定的，2D 图表征丢掉了构象信息。Uni-Mol 把 3D 几何直接放进预训练目标，在构象敏感的任务（结合、极性表面积类性质）上起点更高。",
+  "co": "深势科技 DP Technology（私企，工具平台型，按口径不展开）+ 微软研究院；开源，被集成进多家公司的性质预测管线。",
+  "lim": "成也 3D、受困于 3D：输入构象质量直接决定输出质量，而真实场景里配体构象本身就要靠预测——构象给错，后面全错。柔性分子的多构象问题（同一个分子有一堆能量相近的构象）它一个构象一个构象地处理，没有集成层面的一致性保证。",
+  "papers": [
+   "Zhou et al., \"Uni-Mol: A Universal 3D Molecular Representation Learning Framework\", ICLR 2023"
+  ]
+ },
+ "n26": {
+  "principle": "不算绝对亲和力，算\"配体 A 变成配体 B 后结合自由能差多少\"——沿着一条炼金术路径逐步把 A 微扰成 B，对每步势能差做统计力学平均。",
+  "mechanism": "Zwanzig 自由能微扰公式（F9）：\n\n$$\\Delta G_{A \\to B} = -k_B T \\ln \\left\\langle \\exp\\!\\left(-\\frac{U_B - U_A}{k_B T}\\right) \\right\\rangle_A$$\n\n实际计算把 A→B 拆成几十个中间态 λ 窗口，每个窗口跑分子动力学采样，显式水溶剂+显式蛋白柔性，串起各窗口得相对结合自由能。精度约 1 kcal/mol（亲和力 5 倍以内），是先导优化阶段\"哪个类似物值得合成\"的决策依据。",
+  "why": "它回答的正是药物化学家每天的问题：在这个骨架上把甲基换成氯、活性会怎样。物理第一性原理，不依赖训练集里有没有见过这类分子，外推可靠性是 ML 方法比不了的。最硬商业案例：Nimbus 用 FEP+ 优化的 TYK2 抑制剂 zasocitinib 以 $40 亿首付卖给武田，2026 年获 FDA 优先审评——AI 制药迄今最贵的一笔交易，底座是物理方法。",
+  "co": "Schrödinger（SDGR，FEP+ 为其旗舰产品）；开源替代品 OpenFE 近年成熟，正在压低这个环节的价格。",
+  "lim": "算一个分子要小时级算力，通量决定了它只能用在最后几十到几百个候选的精排，大规模筛选轮不到它。精度也对体系敏感——大构象变化、共价结合、金属配位这些场景误差明显放大。ML 亲和力模型（Boltz-2 类）切的就是\"先粗筛、头部再交 FEP 复核\"的分层空档。",
+  "papers": [
+   "Zwanzig, \"High-temperature equation of state by a perturbation method\", J. Chem. Phys. 1954",
+   "Wang et al., \"Accurate and Reliable Prediction of Relative Ligand Binding Potency in Prospective Drug Discovery (FEP+)\", JACS 2015"
+  ]
+ },
+ "n27": {
+  "principle": "FEP 的第一遍廉价替代：把 FEP 算出来的百万级亲和力标签蒸馏进神经网络，之后每个新分子 20 秒出预测值。",
+  "mechanism": "架构见节点 13，这里讲用法分层：hit 分类阶段用二分类输出 affinity_probability_binary（是不是 binder），hit-to-lead 排序用连续值 affinity_pred_value，排进头部 1% 的候选再交给 FEP 或实验确认。训练前对 FEP+ 基准蛋白做了序列去重（≥90% 同一性剔除），保证基准上是\"没见过的蛋白\"。",
+  "why": "蒸馏把一次性的大算力投入（FEP 批量打标）摊薄到之后每一次推理上，单位成本降了三个数量级。FEP+ 基准 Pearson 约 0.62–0.66，已经和开源 OpenFE 打平；2026 年的独立研究证明针对特定靶点微调后还能再涨（某难例从 R≈0.01 提到 0.40）。对药企而言，\"够用且极快\"的排序工具价值大于\"完美但极慢\"。",
+  "co": "MIT + Recursion 共建，MIT 协议开源；Boltz PBC 托管 API（2026.6 上线 BoltzMol-1 专用筛选模型）。",
+  "lim": "两个数字要一起记：官方基准 0.62–0.66，但部分独立测试集上掉得明显；精度与 MSA 深度、化学型是否在训练域强相关。PROTAC、大环、多肽这类新骨架基本出域，用之前必须查适用域。它的正确位置是\"分层漏斗的粗筛层\"，当成 FEP 平替会翻车。",
+  "papers": [
+   "Passaro et al., \"Boltz-2: Towards Accurate and Efficient Binding Affinity Prediction\", bioRxiv 2025"
+  ]
+ },
+ "n28": {
+  "principle": "不一次测完所有候选：每轮用代理模型预测+不确定性估计，只挑\"信息价值最高\"的少数分子送湿实验，结果回来更新模型，几轮收敛到最优。",
+  "mechanism": "代理模型（常用高斯过程）给出每个候选分子的预测均值和方差，采集函数决定测谁——以期望改进（EI）为例（F7）：\n\n$$\\mathrm{EI}(x) = \\mathbb{E}\\left[\\max\\!\\left(0,\\ f(x) - f(x^+)\\right)\\right]$$\n\nEI 同时奖励\"预测好\"（exploitation）和\"不确定\"（exploration），避免模型困在局部最优。闭环速度由湿实验通量决定，算法侧早已不是瓶颈。",
+  "why": "湿实验是药物研发最贵最慢的环节，采样效率直接等于钱。文献案例里约 500 个变体 4 轮迭代把酶活提升 16–26 倍；在蛋白定向进化领域这套方法十年前就被验证（2019 年 Nat Methods 的机器学习指导进化是标志性工作）。",
+  "co": "晶泰科技 XtalPi（2228.HK，\"AI+机器人\"干湿闭环的港股标的；2025 年 11 月与礼来 $3.45 亿双抗合作，继 2023 年 $2.5 亿小分子后再携手）；Recursion 的自动化平台同源；学术界开源工具链成熟（BoTorch/Ax）。",
+  "lim": "闭环转多快取决于湿实验通量和质量，算法不是瓶颈——这意味着纯软件公司抄不走这套东西，真正难抄的是自动化实验室和长期积累的自有数据。另外代理模型在高维化学空间的不确定性估计本身就不太可靠，探索和利用的平衡经常需要人工调。",
+  "papers": [
+   "Yang et al., \"Machine-learning-guided directed evolution for protein engineering\", Nature Methods 2019",
+   "Shahriari et al., \"Taking the human out of the loop: A review of Bayesian optimization\", Proceedings of the IEEE 2016"
+  ]
+ },
+ "n29": {
+  "principle": "从目标分子往回拆：神经网络预测\"这一步能由哪些前体做出来\"，树搜索在可能的拆解路径里找代价最低的合成路线。",
+  "mechanism": "单步逆合成用模板匹配或 Transformer 直接从前体生成产物（正向反应预测的反用）；多步搜索用蒙特卡洛树搜索或 A* 变体（Retro* 的 And-Or 树搜索是代表），价值函数估计\"这条路线还剩几步、多贵\"。评估维度包括步骤数、原料可得性、反应成功率先验。",
+  "why": "逆合成的组合爆炸靠人脑枚举不现实，2018 年 Segler 在 Nature 上证明深度学习+树搜索能做出接近专业化学家的路线规划，是这个范式的起点。如今它是分子生成管线的标准下游筛子——生成模型出的每个分子都要先过\"做不做得出来\"这一关。",
+  "co": "ASKCOS（MIT，开源）、AiZynthFinder（阿斯利康，开源）、Synthia（默克旗下，商业）；各家生成平台（Chemistry42 等）内部均集成同类模块。",
+  "lim": "预测的路线跟实际产率、纯化难度、副反应经常对不上——模型学的是文献里\"报道过的反应\"，文献不报失败实验，数据天生带幸存者偏差。它的现实定位是\"快速排除明显做不出来的分子\"，不是合成保证书。",
+  "papers": [
+   "Segler et al., \"Planning chemical syntheses with deep neural networks and symbolic AI\", Nature 2018",
+   "Chen et al., \"Retro*: Learning Retrosynthetic Planning with Neural Guided A* Search\", NeurIPS 2020",
+   "Genheden et al., \"AiZynthFinder: a fast, robust and flexible open-source software for retrosynthetic planning\", J. Cheminform. 2020"
+  ]
+ },
+ "n30": {
+  "principle": "把活性、选择性、ADMET、可合成性打成多目标打分函数，生成式设计往这个组合目标收敛，用最少合成次数逼近临床候选。",
+  "mechanism": "主动学习闭环（节点 29 同源）+ 多目标优化的组合：每轮设计少量分子、合成、测试、回灌模型。其行业地位来自纪录而非架构：DSP-1181（强迫症，与住友合作）2020 年进 I 期，是史上首个进入人体的 AI 设计分子，当时宣称从启动到临床仅 12 个月。",
+  "why": "它最先证明了\"AI 设计→合成→进人体\"这条链能跑通，把行业叙事从\"加速筛选\"推到\"端到端设计\"。这个里程碑意义是真实的，2024 年 11 月 Recursion 以 $6.88 亿全股票将其收购。",
+  "co": "Recursion（RXRX，合并后实体；原 Exscientia 管线与合作并入）。",
+  "lim": "但这也是投研里最该研究的\"反例\"集：DSP-1181 后来被住友终止，EXS21546 因治疗窗问题 2023 年下马，BMS 2025 年 10 月砍掉合作中的 PKC-θ 抑制剂。史上第一个进临床的 AI 分子没能走到证明疗效那步——\"进临床\"和\"能成药\"之间的鸿沟，这家公司一个也没能跨过去。看任何\"我们分子进临床了\"的宣传都该想起这组名字。",
+  "papers": [
+   "Mullard, \"AI-designed drug candidate enters clinical trials\", Nature Reviews Drug Discovery 2020（DSP-1181 里程碑的行业报道）"
+  ]
+ },
+ "n31": {
+  "principle": "逆折叠：给定蛋白骨架结构，反推什么样的氨基酸序列能折成这个骨架——\"结构→序列\"的标准件。",
+  "mechanism": "图神经网络编码骨架几何（残基间距离、方向、相对位置），消息传递后用自回归方式逐个位置解码氨基酸。关键工程细节是引入解码顺序随机化和噪声训练，对 backbone 误差鲁棒。推理速度极快（秒级出几十条候选序列）。",
+  "why": "蛋白设计的流水线是\"先生成骨架、再填序列\"，ProteinMPNN 填序列这一步的成功率（设计序列能正确折叠的比例）比此前方法高出一个量级，直接让整条设计管线从\"大量试错\"变成\"少量精筛\"。几乎所有蛋白设计公司（Generate、Absci、Xaira）的流水线里都有它或它的变体（BoltzGen 的逆折叠模块就是 SolubleMPNN 的改版）。",
+  "co": "Baker Lab（华盛顿大学）开源，Rosetta/RFdiffusion 生态标配。",
+  "lim": "它只对骨架负责：骨架本身能不能生成、生成得好不好，是上游模型的事；序列折得对也不等于有功能——结合亲和力、催化活性、免疫原性都是下游还要过的关。",
+  "papers": [
+   "Dauparas et al., \"Robust deep learning–based protein sequence design using ProteinMPNN\", Science 2022"
+  ]
+ },
+ "n32": {
+  "principle": "把扩散模型搬到蛋白骨架空间：从随机噪声出发，以 RoseTTAFold 的结构知识为引导，逐步去噪\"长\"出全新蛋白骨架。",
+  "mechanism": "在残基刚体（旋转+平移）空间定义扩散（F3 的 SE(3) 版本），去噪网络用预训练的 RoseTTAFold 微调而来（F4）。支持多种条件化：给功能位点支架化（motif scaffolding）、给对称性约束、给靶点界面约束做结合子设计。生成骨架后接 ProteinMPNN 填序列、再用 AF2 回测\"序列是否折回设计的骨架\"，三段筛子串成完整管线。",
+  "why": "此前从头设计蛋白骨架靠物理采样（Rosetta），成功率低到需要筛选几十万设计。RFdiffusion 把命中率拉高了一到两个数量级，让\"按需求定制蛋白\"从偶发成功变成常规操作。2025 年 11 月 Nature 发表的原子级精度从头抗体设计（不依赖任何天然抗体框架）建立在这条线上。",
+  "co": "Baker Lab 开源；是 Generate Biomedicines、Xaira 等公司的技术底座之一，学术引用与二次开发极多。",
+  "lim": "骨架画得好，不等于序列折得对，更不等于有功能：中间要过 ProteinMPNN 和 AF2 好几道筛，最终湿实验命中率通常还是个位数百分比——只是分母从\"几十万\"缩到\"几十\"，这已经是革命，但不是\"设计即所得\"。",
+  "papers": [
+   "Watson et al., \"De novo design of protein structure and function with RFdiffusion\", Nature 2023",
+   "Bennett et al., \"Atomically accurate de novo design of antibodies with RFdiffusion\", Nature 2025"
+  ]
+ },
+ "n33": {
+  "principle": "生成式蛋白设计平台：把蛋白当成可编程对象，按功能条件（结合某靶点、具备某催化活性）直接生成抗体/酶/多肽的完整结构。",
+  "mechanism": "扩散生成（F3/F4）+ 可编程条件层：用低维约束（对称性、功能位点、语义标签）引导高维结构生成，设计上强调\"可组合条件\"。Nature 2023 论文展示了从零生成具有指定几何与功能特征的蛋白，并经实验验证部分设计有活性。",
+  "why": "公司层面的证据比模型本身更硬：Generate 的 GB-0895（抗 TSLP 长效抗体，严重哮喘）2025 年 12 月启动两项全球 III 期（SOLAIRIA-1/2，约 1600 人、40+ 国家），是全球首个 AI 设计抗体进 III 期，从分子合成到 III 期仅 4 年；GB-0669（新冠预防抗体）I 期安全性数据 2025 年已读出。Generate 2026 年 2 月纳斯达克 IPO 募资 $4 亿。",
+  "co": "Generate Biomedicines（已上市）。",
+  "lim": "III 期数据还没读出来，疗效这道坎没过之前，\"AI 设计抗体\"的最强案例也还只是\"进了 III 期\"。Chroma 平台本身开源版本与公司内部管线的差距外界无从评估——IPO 后信息披露会好一些，但模型细节大概率继续闭源。",
+  "papers": [
+   "Ingraham et al., \"Illuminating protein space with a programmable generative model\"（Chroma）, Nature 2023"
+  ]
+ },
+ "n34": {
+  "principle": "零样本抗体设计：给定抗原结构和表位，直接从头生成 CDR 区和完整抗体，不依赖任何已有抗体模板或筛选库。",
+  "mechanism": "延续 Chai-1 的扩散共折叠架构，加入设计模式：在抗体区域放开生成、抗原侧固定作条件，一体化完成\"设计+折叠验证\"。官方预印本报告：24 孔板规模实验，计算设计命中率约 16–20%（52 个抗原里一半拿到至少一个 hit），较传统计算方法约百倍提升；另有姊妹预印本报告原子级精度设计类药性抗体。",
+  "why": "传统抗体发现靠免疫动物或展示库筛选，周期以月计、且对有些表位就是筛不到。如果 20% 命中率为真，\"两周、一块 24 孔板、零样本\"意味着抗体发现的成本结构被改写——这也是 Chai 2026 年 7 月拿到 $4 亿融资（估值 $38 亿）的底气。",
+  "co": "Chai Discovery（OpenAI、Thrive 投资；2026 年与礼来、辉瑞、诺华签约）。按口径（无临床分子）不展开公司。",
+  "lim": "16–20% 这个数字出自公司自己发的预印本，没过同行评审；命中率高低极度依赖基线怎么定、抗原难度怎么分布、什么算\"hit\"（亲和力阈值多松）。第三方独立复现出来之前，建议按\"方向可信、数字打折\"处理。",
+  "papers": [
+   "Chai Discovery Team, \"Zero-shot antibody design in a 24-well plate\", bioRxiv 2025"
+  ]
+ },
+ "n35": {
+  "principle": "把靶蛋白序列和被遮住的多肽拼成一条\"句子\"，微调 ESM-2 把遮住的多肽填回来——只用序列、不要结构，设计靶向结合肽。",
+  "mechanism": "以 ESM-2（650M）为底座全参数微调：输入=靶蛋白序列+尾部掩码掉的多肽序列，训练目标就是重建多肽区域（F10 的条件版）。训练数据约 1 万对蛋白-多肽序列对（PepNN/Propedia）。生成时给靶序列+指定长度的掩码，top-k 采样出候选多肽。设计出的多肽可融合 E3 泛素连接酶做成\"多肽降解剂\"，靶向传统意义上不可成药的蛋白。",
+  "why": "它绕开了结构依赖这条最大的门槛：无序蛋白、没有口袋的蛋白、没解析过结构的靶点，只要有序列就能设计结合肽。论文里 in silico 命中率 38%（RFdiffusion 对照 29%），并在 NCAM1（白血病标志物）、AMHR2 等 RFdiffusion 打不动的靶点上拿到纳摩尔级结合，亨廷顿病驱动蛋白的细胞内降解也获实验验证。",
+  "co": "UPenn Chatterjee 组开源（HuggingFace 月均下载约 600 次）；学术采用面广。",
+  "lim": "多肽成药的老问题它一个都没解决：血浆稳定性、透膜性、体内半衰期——这些恰恰是多肽药物历史上死掉的地方。它负责\"找到能结合的肽\"，从结合肽到药还有整条药剂学链路。38% 是 in silico 命中率（以 AlphaFold-Multimer 打分为判据），湿实验命中率低于此。",
+  "papers": [
+   "Chen et al., \"Target sequence-conditioned design of peptide binders using masked language modeling\", Nature Biotechnology 2025"
+  ]
+ },
+ "n36": {
+  "principle": "腾讯的抗体专用结构工具链：抗体结构预测（tFold-Ab）、抗原-抗体复合物建模（tFold-Ag）、再到表位特异性的从头抗体设计，三位一体。",
+  "mechanism": "不走 AlphaFold 的 MSA 重路线，用蛋白质语言模型嵌入+轻量化结构模块实现快速预测，精度对标 AF2 系但速度快得多，适合大规模虚拟筛选。设计模块在给定表位约束下生成 CDR，pipeline 内嵌亲和力与可开发性评估。代表数据：设计的抗 PD-L1 抗体亲和力达 45 pM，且为全计算设计+实验验证闭环。",
+  "why": "把\"预测-筛选-设计\"三段整合进一个快框架，吞吐优势在需要批量评估的场景（如双抗构型筛选）体现明显。腾讯作为平台方的意义在于给国内生态提供了一个对标 AF 系的开源选项。",
+  "co": "腾讯 AI Lab（开源，代码权重全放；平台方而非药企，管线推进要看合作方）。",
+  "lim": "验证停留在论文级：PD-L1 是结构数据最充分的靶点之一，换个冷门表位表现如何没有公开数据。没有往临床推进的分子背书，目前价值在研究工具层而非管线层。",
+  "papers": [
+   "Wu et al., \"Fast and accurate modeling and design of antibody-antigen complex using tFold\", Nature Communications 2025（预印本 2024.2）"
+  ]
+ },
+ "n37": {
+  "principle": "Boltz 系列从\"预测\"跨到\"生成\"的一步：一个模型同时做结合蛋白设计+复合物结构预测，设计与打分不清家。",
+  "mechanism": "扩散生成框架统一了\"设计新蛋白\"和\"预测复合物结构\"两个任务（F3/F4），亮点是设计规范语言：用户用声明式配置指定\"哪段固定、哪段生成、是否允许靶点局部柔性、是否加共价订书钉\"，一套配置覆盖小蛋白 binder、纳米抗体（只重设计三个 CDR 环）、环肽等多种模态。生成后经内置逆折叠（SolubleMPNN 改版）填序列、质量-多样性算法筛选。湿实验验证覆盖 15 个靶点（含 10 个全新靶点）。",
+  "why": "以往\"设计模型\"和\"评估模型\"是两个体系，生成一批再换工具打分，误差在接口处放大。BoltzGen 把两者统一进一个模型，设计上就直接利用评估模型的几何理解。加上 MIT 协议全开源（权重+代码+设计），它是开源蛋白设计栈里目前最完整的一档。",
+  "co": "MIT CSAIL/Jameel Clinic + Boltz PBC（2026.6 API 上线 BoltzProt-1 即此线产品化）。",
+  "lim": "2025 年 11 月刚发的预印本，还没有第三方独立验证；湿实验亲和力多数在微摩尔级（如 protegrin binder 1.2–7.2 μM），离药物级亲和力还有几轮优化。与 RFdiffusion+ProteinMPNN+AF2 成熟管线的正面对比数据有限，换工具的收益需要按项目实测。",
+  "papers": [
+   "Stark et al., \"BoltzGen: Toward Universal Binder Design\", bioRxiv 2025"
+  ]
+ },
+ "n38": {
+  "principle": "它不是模型，是标尺：把 ADMET 评测做成 22 个标准端点+统一数据切分协议，让任何\"我们的毒性预测很准\"都有了一把公共尺子。",
+  "mechanism": "覆盖吸收（Caco-2）、分布（BBB）、代谢（CYP 抑制五兄弟）、排泄（清除率、半衰期）、毒性（hERG、DILI、AMES）全套端点，关键设计是 scaffold split——按化学骨架切训练/测试集，专门防止\"测试集里有训练集类似物\"造成的虚高分。",
+  "why": "ADMET 领域过去最大的问题是各家自报各的分数，没有可比性。TDC 统一之后，\"SOTA\"三个字才有了最低限度的含义，也成为尽调时的标准提问：跑没跑 TDC、什么切分、多少分。",
+  "co": "哈佛/佐治亚理工等学术团队维护，开源免费；工业界评估新模型时的默认参照。",
+  "lim": "标尺本身也有边界：端点数据以体外实验为主，体外到体内的转化误差不在评测范围内；22 个端点覆盖不了种属差异和罕见毒性。TDC 分高是必要条件，远不是充分条件。",
+  "papers": [
+   "Huang et al., \"Therapeutics Data Commons: Machine Learning Datasets and Tasks for Drug Discovery and Development\", NeurIPS Datasets and Benchmarks 2021"
+  ]
+ },
+ "n39": {
+  "principle": "最朴素的生产级方案：把分子编码成固定长度的子结构指纹，丢给梯度提升树做预测，不调深度、不堆参数。",
+  "mechanism": "ECFP 指纹以每个原子为中心、按键半径逐层扩展提取环状子结构，哈希成 1024/2048 位向量；XGBoost 在这上面做梯度提升回归/分类，自动学特征交互。没有需要理解的深度架构，训练分钟级完成。",
+  "why": "两个原因：指纹编码已经把药物化学家几十年积累的\"哪些子结构重要\"固化进去了；GBM 在小数据（几百到几千个分子）上的统计效率远高于深度网络。2025 年的独立研究再次确认：在 TDC 多个任务上，这套老办法打平甚至超过深度模型。",
+  "co": "开源全家桶（RDKit + XGBoost/LightGBM）；药企内部 ADMET 平台的事实默认配置。",
+  "lim": "指纹是定死的编码，出了已知骨架覆盖范围就外推不动；对构象敏感的性质（涉及 3D 的端点）天生吃亏。它赢在小数据场景，数据规模上来之后深度模型的优势才会显现。",
+  "papers": [
+   "Rogers & Hahn, \"Extended-Connectivity Fingerprints\", J. Chem. Inf. Model. 2010",
+   "2025 年 TDC 复测研究（指纹+GBM 对比深度模型），arXiv: 2509.04601"
+  ]
+ },
+ "n40": {
+  "principle": "让几十个 ADMET 端点共享一套分子表征，数据少的端点\"借\"数据多的端点的知识。",
+  "mechanism": "消息传递主干同节点 25（F2），输出端接几十个任务头联合训练。低数据端点（某些 CYP 亚型、hERG 的特定实验条件）靠共享表征里的迁移信号把精度拉起来。",
+  "why": "ADMET 各端点在化学上不是独立的：CYP 抑制和亲脂性有关，hERG 和碱性氮有关。共享表征让这些化学相关性变成免费的先验。这也是 Chemprop 在工业界的主流用法——没人只训单任务。",
+  "co": "Chemprop 2.0 原生支持多任务；各药企私有 ADMET 模型基本都是这个形态。",
+  "lim": "迁移收益集中在数据少的端点，数据多的端点提升有限，有时还有负迁移（端点间目标冲突互相拖累）。任务权重怎么配比是个手工活，没有公认配方。",
+  "papers": [
+   "Ramsundar et al., \"Massively Multitask Networks for Drug Discovery\", arXiv 2015",
+   "Heid et al., \"Chemprop: A Machine Learning Package for Chemical Property Prediction\", J. Chem. Inf. Model. 2024"
+  ]
+ },
+ "n41": {
+  "principle": "把几十个端点的预测模型打包成一个网页工具：丢一个 SMILES 进去，一整套 ADMET 报告出来。",
+  "mechanism": "集成形态而非单一模型：每个端点背后是独立训练的最优模型组合（GNN/指纹/描述符混合），平台价值在工程整合、统一输出格式和免费易得。3.0 版覆盖 100+ 端点并加了不确定性估计。",
+  "why": "对小团队和早期项目，自建全套 ADMET 模型不划算，一站式平台把门槛打到零。学术界引用量巨大，实际也是很多公司 pitch 里\"我们预测了 ADMET\"背后的工具。",
+  "co": "ADMETlab（中南大学团队，免费开源）、admetSAR 等同类。",
+  "lim": "只用公开数据训练，到了药企私有化学空间精度系统性打折——这一点做尽调时尤其要注意：公司用公共平台跑出来的\"预测结果\"证明不了任何自有能力。公共平台的意义是快速排雷，不是决策依据。",
+  "papers": [
+   "Fu et al., \"ADMETlab 3.0: an updated comprehensive online ADMET prediction platform\", Nucleic Acids Research 2024"
+  ]
+ },
+ "n42": {
+  "principle": "不测单个端点，测整个细胞的形态反应：机器人实验室批量做细胞处理+成像，AI 从高维表型里读毒性和脱靶信号。",
+  "mechanism": "与节点 9 同一底座（Cell Painting 成像+深度表型嵌入），此处用在临床前验证端：候选分子打到多种细胞上，表型嵌入与已知毒性分子的表型距离即为风险信号；数据回灌模型形成\"设计-测试\"闭环。Recursion 自建 BioHive-2 超算（H100 集群）支撑全流程。",
+  "why": "传统毒理端点是\"你怀疑什么就测什么\"，非预期毒性天然漏网。表型方法不预设假设，全细胞水平的反应都在读出范围内——JUMP-Cell Painting 联盟 2024 年发表的 300 万图像公共数据集证明了这套读出的可复用性。",
+  "co": "Recursion（RXRX）；JUMP-Cell Painting（Broad 牵头的公共版本，数据开放）。",
+  "lim": "从细胞表型推到人体毒性，全行业都还没解决好——细胞模型没有肝肠循环、没有免疫系统的全身反应。这套玩法资本开支极重（机器人+超算），而且表型信号与临床毒性的前瞻性对应关系，公开证据仍然薄弱。",
+  "papers": [
+   "Chandrasekaran et al., \"Three million images and morphological profiles of cells treated with matched chemical and genetic perturbations\"（JUMP-Cell Painting）, Nature Methods 2024"
+  ]
+ },
+ "n43": {
+  "principle": "把扰动响应模型当\"体外毒理的预筛\"：在硅基上预测候选分子会让哪些基因表达异常，再决定哪些值得进动物实验。",
+  "mechanism": "模型谱系见节点 5–7：GEARS 用基因互作图网络做单/双基因扰动预测，CPA 用条件自编码器把\"细胞状态+扰动+剂量\"解耦成可组合的隐变量，State 在其后把规模推到亿级细胞。毒性场景的标准用法是预测候选分子在肝、心肌细胞上的转录组偏移。",
+  "why": "单基因扰动预测上 GEARS/CPA 已有可用的精度，用于前置筛选理论上能砍掉一批注定要死在动物毒理上的分子——每只动物实验的钱和时间都是实打实省下来的。",
+  "co": "学术开源为主（GEARS 来自斯坦福 Leskovec 组，CPA 来自亥姆霍兹 Theis 组）；与节点 6–7 的 State/X-Cell 构成同一条演进线。",
+  "lim": "转录组只是替代终点，它和真实器官毒性的对应关系没有确证——基因表达正常不等于没有毒性，反之亦然。跨细胞系泛化到 2026 年仍是 Virtual Cell Challenge 的未解题目。定位是\"降低动物实验数量的辅助筛\"，不是替代。",
+  "papers": [
+   "Roohani et al., \"Predicting transcriptional outcomes of novel multigene perturbations with GEARS\", Nature Biotechnology 2024",
+   "Lotfollahi et al., \"Learning interpretable cellular responses to complex perturbations in high-throughput screens\"（CPA）, Molecular Systems Biology 2023"
+  ]
+ },
+ "n44": {
+  "principle": "生理药代模型（PBPK）的器官隔室框架不动，把里面最难测的参数（清除率、分布容积）换成 ML 预测，做种属外推和首次人体剂量估算。",
+  "mechanism": "PBPK 用一组微分方程描述药物在各器官间的分布与消除，方程结构来自生理学，参数传统上靠体外实验外推；ML 的切入点是从分子结构直接预测这些参数，把\"体外-体内外推\"（IVIVE）里误差最大的环节换成数据驱动。Simcyp、GastroPlus 等商业平台均已集成此类模块。",
+  "why": "它解决的是\"动物身上的 PK 搬到人身上会差多少\"这个每款药都躲不掉的问题。混合架构的聪明之处在于：监管已经接受 PBPK 框架几十年，ML 只是替换了参数来源，申报故事好讲。",
+  "co": "Certara Simcyp、Simulations Plus GastroPlus（均为成熟商业平台）；大药企内部标配。",
+  "lim": "监管认的是传统 PBPK 的方法学框架，里面塞的 ML 组件得一个一个单独论证——\"这个清除率是神经网络预测的\"在申报文件里要写清验证依据。ML 参数的误差会在微分方程里传播放大，端到端误差量化仍不成熟。",
+  "papers": [
+   "Jones & Rowland-Yeo, \"Basic concepts in physiologically based pharmacokinetic modeling in drug discovery and development\", CPT: Pharmacometrics & Systems Pharmacology 2013"
+  ]
+ },
+ "n45": {
+  "principle": "给每个受试者训练一个\"如果 TA 进了安慰剂组\"的数字孪生，把这个预测值当协变量做统计调整，同等效力下缩小真实对照组。",
+  "mechanism": "分两阶段：先用历史对照组数据训练疾病进展模型（输入基线特征，输出\"不接受治疗情况下的终点轨迹\"）；进试验后用 PROCOVA 方法把孪生预测作为协变量纳入方差分析——方差被解释掉一部分，达到同样检验效能所需的真实样本量下降。阿尔茨海默病方向报告可减 33% 对照组样本。",
+  "why": "这是 AI 在临床环节拿到的最高级别监管背书：2022 年 9 月 EMA 对 PROCOVA 出具正面资格认定意见（Qualification Opinion），方法学与 FDA 指南一致。它不动试验的因果推断基础（随机对照仍是核心），只是把统计效率榨得更干——这个定位精准地避开了监管雷区。",
+  "co": "Unlearn.AI（私企，客户为顶级药企）；适应症集中在历史数据厚的领域（阿尔茨海默、帕金森、偏头痛等）。",
+  "lim": "先把误解说死：它不是拿假人替真人做试验，试验里一个真人都不省，省的只是对照组规模。而且只在历史数据够多、疾病进展模式稳定的适应症玩得转——罕见病、全新机制没有历史数据可训。统计效率的提升是百分比级的优化，不是范式革命。",
+  "papers": [
+   "EMA CHMP, \"Qualification Opinion for PROCOVA™\", 2022（监管文件）",
+   "Schuler et al.（Unlearn）, \"Increasing the efficiency of randomized trial estimates via linear adjustment for a prognostic score\", 2022"
+  ]
+ },
+ "n46": {
+  "principle": "用 LLM 的序列生成能力造患者：按时间顺序生成每个虚拟患者的完整临床事件轨迹（就诊、检验、用药、结局），支持反事实推演。",
+  "mechanism": "把 EHR 时间序列离散化成 token 流，GPT 式自回归训练（F1/F10 的自回归版本）；推理时给定患者基线，可分别生成\"用药\"和\"不用药\"两条轨迹，模拟反事实治疗结局。训练数据是真实 EHR 脱敏序列。",
+  "why": "相比 Unlearn 的单终点预测，TWIN-GPT 生成的是整条轨迹，理论上能回答更复杂的\"如果换药会怎样\"。学术上是合成临床数据方向的代表作之一。",
+  "co": "学术研究（UIUC 等），开源原型；离工业使用尚远。",
+  "lim": "合成数据里保不保得住真实的因果关系，验证方法本身就不成熟——用合成数据训练的模型去评估合成数据，是自证循环。多步生成误差累积明显，长轨迹末端基本不可信。目前没有监管路径可言。",
+  "papers": [
+   "Wang et al., \"TWIN-GPT: Digital Twins for Clinical Trials via Large Language Model\", arXiv 2024"
+  ]
+ },
+ "n47": {
+  "principle": "用 NLP 同时读两边：患者的非结构化病历和试验的入排标准，自动算匹配度，把人工筛病历的活自动化。",
+  "mechanism": "TrialGPT 为代表：LLM 先把入排标准拆成原子化条件清单，再逐条对照病历生成\"满足/不满足/信息不足\"的判定+依据引用，最后汇总成匹配评分和排序。可解释性设计（每条判定附原文出处）是它能进医院流程的关键。",
+  "why": "招募是临床试验最大的时间黑洞（大量试验因招不满而延期），而筛选靠人工翻病历。行业报告筛查准确率提升约 70%、招募周期缩短数月——这个环节的价值兑现路径最直接，不涉及疗效预测的统计争议。",
+  "co": "Deep 6 AI（私企）、Antidote、Tempus（TEM，肿瘤领域招募+分子分型匹配是核心业务之一）、TrialGPT（NIH 学术开源）。",
+  "lim": "病历数据质量参差：关键信息经常缺记、记错、埋在影像报告扫描件里。医院数据接口和隐私合规的推进速度，比模型本身的进步慢得多——瓶颈在部署不在算法。",
+  "papers": [
+   "Jin et al., \"Matching patients to clinical trials with large language models\"（TrialGPT）, Nature Communications 2024"
+  ]
+ },
+ "n48": {
+  "principle": "把基因组、影像、病历、检验报告全部编码进一个患者表征，分层患者、预测疗效，服务富集设计和伴随诊断。",
+  "mechanism": "多模态融合架构：各模态先各自过专用编码器（基因组用序列模型、病理切片用视觉基础模型、病饮用 LLM），再跨模态注意力整合（F1）。商业核心不在架构而在数据：Tempus 是美国最大的临床-分子数据库，覆盖数百万癌症患者的配对数据。",
+  "why": "肿瘤试验失败的一大原因是入组患者太杂——分层分对了，弱效药物也能在亚群里显出效果。Tempus 的收入模型（数据授权+检测服务）证明了这个环节可以直接变现，不需要赌单一管线。",
+  "co": "Tempus（TEM）；Foundation Medicine（罗氏旗下，同赛道前辈）。",
+  "lim": "值钱的是数据规模不是模型本身——这既是护城河也是天花板：护城河在于别人短期攒不出等量数据，天花板在于模型层的可替代性很强。数据偏倚（美国癌症患者、商业医保覆盖人群）对泛化到中国等市场的适用性要打问号。",
+  "papers": [
+   "无单一代表作，见 Tempus 年报/10-K 披露（2025）"
+  ]
+ },
+ "n49": {
+  "principle": "多模态集成模型预测 II 期→III 期转化成功率，卖给药企做管线排序、卖给投资机构做尽调。",
+  "mechanism": "Transformer 集成（组学+文本+试验设计+小分子性质），训练数据 5.56 万个 II 期试验。验证做了三层：回测、准前瞻、前瞻——前瞻集准确率 79%，准前瞻集 ROC AUC 0.88。有意思的细节：2016 年就把第一批预测放在带时间戳的预印本服务器上存证，七年后兑现验证。论文还发现靶点选择对结果的预测力远大于试验设计。",
+  "why": "对投研场景这是直接对标产品：判断一个 II 期分子的成败概率，本来就是分析师的工作。0.88 AUC 意味着它能给出有统计区分度的排序，论文里还演示了按预测构建虚拟组合 9 个月 35% 收益的回测。",
+  "co": "Insilico Medicine（Medicine42 平台组件；面向药企、对冲基金、银行的 SaaS/合作模式）。2026 年发布 Agent 版，对 2025 年完成的 907 个试验回测综合 AUROC 0.807。",
+  "lim": "回测 AUC 再好看，也覆盖不了监管黑天鹅和试验执行事故这类结构化数据里没有的失败模式。79% 前瞻准确率的样本量很小。另外注意卖方利益相关：它是 Insilico 自家产品，独立第三方验证缺乏。",
+  "papers": [
+   "Kamya, Zhavoronkov et al., \"Prediction of Clinical Trials Outcomes Based on Target Choice and Clinical Trial Design with Multi-Modal Artificial Intelligence\", Clinical Pharmacology and Therapeutics 2023"
+  ]
+ },
+ "n50": {
+  "principle": "用百万级病理全切片预训练视觉基础模型，一张切片直接提取形态表征，做疗效评估、生物标志物发现和患者分层。",
+  "mechanism": "自监督预训练（DINO 类对比学习）在超大切片库上得到 patch 级表征，多实例学习（MIL）聚合到切片级预测。代表作 UNI（Nature Medicine 2024）用 10 万张切片预训练；Mayo/Aignostics 的 ATLAS 规模到 120 万张。下游任务包括预后预测、治疗响应标志物、可解释的形态-分子关联。",
+  "why": "病理切片是常规诊疗里天然存在的数据，零额外采集成本；形态学里藏着基因表达和预后的信号（如 MSI 状态从 HE 切片可预测）。对药企的价值在伴随诊断和富集入组。",
+  "co": "Aignostics（私企，与拜耳等合作）、Paige、PathAI；学术标杆 UNI/CONCH（哈佛 Mahmood 组，开源）。",
+  "lim": "在药物研发链条里它的因果归因偏弱——能预测\"谁会响应\"，解释不了\"为什么响应\"。实际落地更多在诊断和分层，作为药物开发决策的直接证据分量不足。扫描仪型号、染色差异造成的域偏移是工程上永远的痛。",
+  "papers": [
+   "Chen et al., \"Towards a general-purpose foundation model for computational pathology\"（UNI）, Nature Medicine 2024"
+  ]
+ },
+ "n51": {
+  "principle": "在生物医学知识图谱上训练图神经网络，为零治疗手段的罕见病做零样本老药新用预测。",
+  "mechanism": "图 Transformer 在多层关系图（药物-靶点-疾病-通路）上做消息传递（F2），把\"零样本\"形式化为：对训练中完全没见过适应证的药物，借其邻域结构推断潜在新用途。还配了解释模块，能给出预测的路径级理由供医生审阅。",
+  "why": "全球约 7000 种罕见病里 95% 没有获批药物，传统开发经济账算不过来，老药新用是少数现实路径。TxGNN 论文报告在零样本设定下预测精度大幅超过此前方法，且覆盖疾病面广。",
+  "co": "哈佛 Marinka Zitnik 组（开源）；学术端影响力大，工业端多作为灵感来源而非直接产品。",
+  "lim": "图谱上挖出的关联离临床验证还很远——巴瑞替尼治 COVID 那种\"图谱提出、RCT 证实\"的运气是少数。知识图谱的数据偏倚（研究多的疾病关联密集）会系统性地把预测推向已经被充分研究的方向，和\"为无人研究的罕见病找出路\"的初衷存在张力。",
+  "papers": [
+   "Huang et al., \"Zero-shot prediction of therapeutic use with geometric deep learning and clinician-centered design\"（TxGNN）, Nature Medicine 2023"
+  ]
+ },
+ "n52": {
+  "principle": "从医保理赔、电子病历、检验数据里挖适应症外的疗效信号，把\"真实世界里这个药顺便治好了什么\"变成可量化的证据。",
+  "mechanism": "NLP 抽取结构化变量（诊断、用药、结局时间线）+ 因果推断方法学（目标试验模拟、倾向评分匹配）控制混杂。价值高度依赖方法学而非模型新颖度——FDA 2018 年发布 RWE 框架后，这类证据在监管沟通中的正式地位才确立。",
+  "why": "RCT 之外的疗效信号本来就在真实诊疗数据里躺着，只是过去提取成本太高。老药新用的很多线索（二甲双胍与癌症、GLP-1 与神经退行）都是从这类数据里先冒头的。",
+  "co": "Aetion（私企）、Tempus（TEM）、Flatiron（罗氏旗下）、Truveta（医疗系统联盟）。",
+  "lim": "可信度全看混杂控制：用药人群和不用药人群本来就不同，\"药导致了好结局\"和\"本来就好的人吃了这个药\"在观察性数据里很难分清。方法学争议从没停过，监管对 RWE 的接受度也是一事一议。",
+  "papers": [
+   "FDA, \"Framework for FDA's Real-World Evidence Program\", 2018（监管框架文件）"
+  ]
+ },
+ "n53": {
+  "principle": "输入两个药物的结构特征+细胞系组学特征，预测联用是协同还是拮抗，服务肿瘤联合方案设计。",
+  "mechanism": "前馈网络（或 GNN 变体）学习\"药物 A 特征 ⊕ 药物 B 特征 ⊕ 细胞背景\"到协同分数（Loewe/Bliss/HSA 模型定义的超额效应）的映射。训练数据来自药物组合筛选公共库（NCI-ALMANAC 等）。",
+  "why": "联合用药的组合空间是天文数字，湿实验穷举不现实；预测模型把优先级排出来，实验只做头部候选。学术 benchmark 上预测协同的 AUC 已相当可观。",
+  "co": "学术开源为主；各肿瘤药企内部有私有版本（数据规模远大于公共库）。",
+  "lim": "细胞系上看到的协同，转到临床的比例很低——组合筛选用的是永生化细胞系，和患者肿瘤微环境差着几个层级。公共训练数据偏向已研究过的药物对，新机制组合的预测置信度低。",
+  "papers": [
+   "Preuer et al., \"DeepSynergy: predicting anti-cancer drug synergy with Deep Learning\", Bioinformatics 2018"
+  ]
+ },
+ "n54": {
+  "principle": "发酵、纯化、结晶的工艺参数优化从\"一次一变量\"换成贝叶斯主动学习：每批实验按信息价值选条件，最少批次数收敛到最优工艺窗口。",
+  "mechanism": "与节点 29 同宗（F7 采集函数+代理模型），变量换成 pH、温度、搅拌速率、补料策略，目标换成产率、纯度、效价。DoE（实验设计）提供初始空间填充采样，贝叶斯优化负责后续迭代。Nature Biotechnology 评论把平台化 CMC 数据复用点名为基因治疗降本提速的关键路径。",
+  "why": "工艺开发的实验批次又贵又慢（一批发酵几天到几周），采样效率直接等于上市时间。有机合成领域 2021 年 Nature 已验证贝叶斯优化在反应条件寻优上的有效性，生物工艺端逻辑相同。",
+  "co": "大药企内部平台（数据不出厂）；部分 CDMO（药明生物、Lonza 等）以\"数字化工艺开发\"名义对外提供。",
+  "lim": "所有数据都在公司内部，没有公开 benchmark，外人验证不了效果——尽调时只能间接看交付周期和批次成功率。工艺场景的物理约束强（设备放大效应），实验室规模优化的结论到中试规模未必平移。",
+  "papers": [
+   "Shields et al., \"Bayesian reaction optimization as a tool for chemical synthesis\", Nature 2021"
+  ]
+ },
+ "n55": {
+  "principle": "用 NLP 从自发报告系统（FAERS）、文献、社媒里挖\"这个药和这个不良事件可能有关\"的信号，供药物警戒团队人工复核。",
+  "mechanism": "两层：实体与事件抽取（从非结构化文本里结构化出药物-事件-患者三元组）+ 不成比例分析（ROR/IC 等统计量衡量某药-某事件的报告频率是否超出背景水平）。LLM 时代的增量在长尾事件的抽取召回率和社媒信源的可用性。",
+  "why": "上市后药物警戒是法定要求，报告量远超人工处理能力（FAERS 每年数百万份）。自动化信号挖掘把人工复核聚焦到统计异常的小集合上，监管机构（FDA、EMA）自己也在用同类系统。",
+  "co": "Oracle Argus、各类 PV 软件商；FDA Sentinel 体系内置同类能力；LLM 创业公司切\"社媒+文献\"增量信源。",
+  "lim": "信噪比低是结构性的：自发报告漏报率高、重复报告多、社媒噪声更大。它只能发现信号，\"信号是不是真因果\"永远需要人工+流行病学研究确认。把它包装成\"AI 判断药物安全性\"是过度宣传。",
+  "papers": [
+   "Harpaz et al., \"Text mining for adverse drug events: the promise, challenges, and state of the art\", Drug Safety 2014"
+  ]
+ }
+};
+
 const STAGES = [
 {id:1, name:'① 靶点发现与验证', en:'Target Discovery', task:'从组学 / 文献 / 表型数据里找可成药靶点', hot:false, groups:[
  {g:'范式 A · 生物医学知识图谱', nodes:[
@@ -761,12 +1351,15 @@ function openNode(id, fromRoute){
   const mt = MAT[nd.m];
   let h = '<span class="badge ' + mt.c + '">' + mt.label + '</span>';
   if (nd.mn) h += '<div class="field"><h4>成熟度说明</h4><p>' + nd.mn + '</p></div>';
-  const dd = nd.d || {};
-  if (dd.principle) h += '<div class="field"><h4>一句话原理</h4><p>' + dd.principle + '</p></div>';
-  h += '<div class="field"><h4>' + (dd.principle ? '核心机制' : '用途') + '</h4><p>' + (dd.mechanism || nd.u) + '</p></div>';
-  if (dd.why) h += '<div class="field"><h4>为什么有效</h4><p>' + dd.why + '</p></div>';
-  if (nd.co) h += '<div class="field"><h4>代表公司</h4><p>' + nd.co + '</p></div>';
-  if (nd.lim) h += '<div class="field"><h4>局限</h4><p>' + nd.lim + '</p></div>';
+  const dd = (typeof DETAILS !== 'undefined' && DETAILS[nd._id]) || nd.d || {};
+  if (dd.principle) h += '<div class="field"><h4>原理概括</h4><p>' + esc(dd.principle) + '</p></div>';
+  if (dd.mechanism) h += '<div class="field"><h4>核心机制</h4>' + texmech(dd.mechanism) + '</div>';
+  else h += '<div class="field"><h4>用途</h4><p>' + nd.u + '</p></div>';
+  if (dd.why) h += '<div class="field"><h4>为什么有效</h4><p>' + esc(dd.why) + '</p></div>';
+  const coTxt = dd.co || nd.co;
+  if (coTxt) h += '<div class="field"><h4>' + (dd.co ? '代表工具与公司' : '代表公司') + '</h4><p>' + esc(coTxt) + '</p></div>';
+  const limTxt = dd.lim || nd.lim;
+  if (limTxt) h += '<div class="field"><h4>局限</h4><p>' + esc(limTxt) + '</p></div>';
   if (dd.papers && dd.papers.length){
     let ph = '';
     dd.papers.forEach(p => { ph += '<p style="margin-bottom:4px">· ' + p + '</p>'; });
@@ -804,10 +1397,21 @@ function closeDrawer(){
   paintChain();
 }
 
+/* 机制文本渲染：$$…$$ 块级公式、$…$ 行内公式，其余转义为纯文本 */
+function texmech(s){
+  let t = esc(s);
+  t = t.replace(/\$\$([\s\S]+?)\$\$/g, (m, tex) => '</p><div class="kt" data-tex="' + tex.replace(/"/g,'&quot;') + '"></div><p>');
+  t = t.replace(/\$([^$\n]+?)\$/g, (m, tex) => '<span class="kti" data-tex="' + tex.replace(/"/g,'&quot;') + '"></span>');
+  return '<p>' + t + '</p>';
+}
+
 function renderMath(root){
   if (typeof katex === 'undefined'){ setTimeout(() => renderMath(root), 200); return; }
   root.querySelectorAll('.kt').forEach(el => {
     try { katex.render(el.dataset.tex, el, {displayMode:true, throwOnError:false}); } catch(e){ el.textContent = el.dataset.tex; }
+  });
+  root.querySelectorAll('.kti').forEach(el => {
+    try { katex.render(el.dataset.tex, el, {displayMode:false, throwOnError:false}); } catch(e){ el.textContent = el.dataset.tex; }
   });
 }
 
