@@ -121,20 +121,46 @@ def keyword_prefilter(papers, cap=60):
     return picked
 
 
+def node_catalog():
+    """从 index.html 的 STAGES 提取 56 个节点名，给 LLM 做映射候选。"""
+    html_path = os.path.join(os.path.dirname(__file__), "..", "index.html")
+    try:
+        html = open(html_path, encoding="utf-8").read()
+        seg = html[html.index("const STAGES = ["):html.index("let nodeIdx")]
+        names = re.findall(r"(?<![A-Za-z])n:'((?:[^'\\]|\\.)*)'", seg)
+        names = [re.sub(r"（[^）]*）", "", s).strip() for s in names]
+        return names
+    except Exception as ex:
+        log(f"节点目录提取失败（跳过映射）: {ex}")
+        return []
+
+
 def llm_pick(candidates):
-    """DeepSeek 从候选中选 AIDD 相关性最强的 Top N，并生成中文标题。"""
+    """DeepSeek 从候选中选 AIDD 相关性最强的 Top N，生成中文标题并映射图谱节点。"""
     if not candidates:
         return []
     listing = "\n\n".join(
         f"[{i}] {p['title']}\n{p['abstract'][:600]}" for i, p in enumerate(candidates)
     )
+    names = node_catalog()
+    node_note = ""
+    node_schema = ""
+    if names:
+        cat = "；".join(f"{i+1}.{n}" for i, n in enumerate(names))
+        node_note = (
+            "另外，为每篇论文从下面的「知识图谱节点清单」中挑出 0-2 个技术上最相关的节点编号"
+            "（论及该方法/模型本身或直接技术相关才选，泛泛相关不选，没有合适的给空数组）。\n"
+            f"节点清单：{cat}\n"
+        )
+        node_schema = ', "nodes": [节点编号]'
     prompt = (
         "你是 AI 药物发现（AIDD）领域的研究分析师。下面是今日新发布的论文列表（编号+标题+摘要节选）。\n"
         f"请选出与「AI/计算方法驱动药物研发」相关性最强、学术或产业价值最高的 {TOP_N} 篇。\n"
         "评判标准：方法新颖性、与制药研发环节（靶点发现/分子生成/结构预测/ADMET/临床）的直接相关性、机构影响力。\n"
         "纯机器学习理论、与生物医药无关的论文不要选。\n"
+        f"{node_note}"
         "严格输出 JSON 数组，不要输出其他内容：\n"
-        '[{"idx": 编号, "title_zh": "中文标题（准确、书面）"}]\n\n'
+        f'[{{"idx": 编号, "title_zh": "中文标题（准确、书面）"{node_schema}}}]\n\n'
         f"论文列表：\n{listing}"
     )
     out = deepseek([{"role": "user", "content": prompt}], max_tokens=1000)
@@ -144,6 +170,8 @@ def llm_pick(candidates):
     for pk in picks[:TOP_N]:
         p = dict(candidates[int(pk["idx"])])
         p["title_zh"] = pk.get("title_zh", "")
+        nl = [int(x) for x in (pk.get("nodes") or []) if isinstance(x, (int, float)) and 1 <= int(x) <= len(names)]
+        p["related_nodes"] = nl[:2]
         result.append(p)
     log(f"DeepSeek 精选 {len(result)} 篇")
     return result
@@ -228,6 +256,7 @@ def main():
             "authors": p["authors"], "source": p["source"],
             "url": p["url"], "pdf": p["pdf"],
             "text_type": note, "intro_zh": intro_zh,
+            "related_nodes": p.get("related_nodes", []),
         })
         time.sleep(1)
 

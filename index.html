@@ -117,6 +117,8 @@
   .pcard .meta a{color:var(--accent);text-decoration:none}
   .pcard .meta a:hover{text-decoration:underline}
   .pcard .ttag{font-size:11.5px;background:#f1f5fb;color:var(--sub);padding:2px 8px;border-radius:10px}
+  .pcard .nchip{font-size:11.5px;background:#ecfdf3;color:#15803d;border:1px solid #bbf0cf;padding:2px 8px;border-radius:10px;text-decoration:none}
+  .pcard .nchip:hover{background:#dcf5e6;text-decoration:none}
   .pcard .intro{display:none;font-size:13.5px;line-height:1.9;color:#2c3646;border-top:1px dashed var(--line);padding-top:12px;margin-top:4px;white-space:pre-wrap}
   .pcard.open .intro{display:block}
   .pcard .tgl{border:none;background:none;color:var(--accent);font-size:13px;cursor:pointer;padding:4px 0}
@@ -1448,12 +1450,18 @@ function renderPapers(){
     days.forEach(day => {
       h += '<div class="dayh">' + day.date + '</div>';
       day.papers.forEach(p => {
+        let chips = '';
+        (p.related_nodes || []).forEach(n => {
+          const nd = byId('n' + (n - 1));
+          if (nd) chips += '<a class="nchip" href="#node-' + (n - 1) + '" title="跳到图谱节点">图谱 · ' + esc(nd.n) + '</a>';
+        });
         h += '<div class="pcard">' +
           '<div class="tzh">' + esc(p.title_zh || p.title_en) + '</div>' +
           (p.title_zh ? '<div class="ten">' + esc(p.title_en) + '</div>' : '') +
           '<div class="meta"><span class="src">' + p.source + '</span>' +
           '<span>' + esc(p.authors) + '</span>' +
           '<span class="ttag">' + (p.text_type === 'introduction' ? 'Introduction 全文翻译' : '摘要翻译') + '</span>' +
+          chips +
           '<a href="' + p.url + '" target="_blank" rel="noopener">页面 ↗</a>' +
           '<a href="' + p.pdf + '" target="_blank" rel="noopener">PDF ↗</a></div>' +
           '<button class="tgl">展开中文全文 ▾</button>' +
