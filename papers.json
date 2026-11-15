@@ -1,6 +1,49 @@
 {
  "days": [
   {
+   "date": "2026-11-15",
+   "papers": [
+    {
+     "title_zh": "共享潜在空间中PDZ结合肽的亲和力引导设计",
+     "title_en": "Affinity-guided design of PDZ-binding peptides in a shared latent space",
+     "authors": "Yamahata, I.; Shimamura, T.; Hayashi, S.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.11.11.765864",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.11.11.765864v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\nPDZ结合基序（PDZ-binding motifs，PBMs）是结合PDZ结构域的短C端序列，参与蛋白质定位与复合物组装。设计PBM可调节这些相互作用，同时保持大部分原始蛋白质序列不变。由于PDZ识别偏好存在重叠，调节预期相互作用需要在考虑靶标亲和力的同时兼顾脱靶结合。计算PBM设计方法通常采用基于序列的亲和力预测和基于结构的评估，但如何用单一训练模型引导序列搜索朝向不同结合目标仍具挑战性。在此，我们提出一种基于深度学习的方法来设计PBM，通过解析地将单靶标、脱靶感知和双靶标设计目标表述为通过定量PDZ-PBM亲和力预测学习到的PDZ-PBM共享潜在空间中的方向。在针对DLG4-PDZ3的单靶标PBM重设计中，我们的方法识别出100个排名最高的候选物，其中84个在已发表的突变体库中实验测定的相互作用适应度位于前1%，而使用现有方法为64个。在10残基PBM的单靶标从头设计中，对于所测试的四个PDZ结构域中的三个，我们的方法在比较方法中取得了最高的中位计算机结合评分。在针对PTPN3和SCRIB-PDZ3的脱靶感知和双靶标PBM设计中，脱靶感知设计以降低靶标结构域评分为代价增加了每个结构域内的组间评分差异，而双靶标设计对两个结构域均产生了接近各自单靶标设计的评分。总之，这些结果表明，从定量亲和力学习到的共享潜在表征使单一训练模型无需重新训练即可引导PBM设计跨越不同结合目标。",
+     "related_nodes": [
+      22,
+      29
+     ]
+    },
+    {
+     "title_zh": "氯法拉滨双重阻断宿主-病原体翻译并削弱肠道细菌毒力",
+     "title_en": "Clofarabine enforces dual host-pathogen translational arrest and disarms enteric bacterial virulence",
+     "authors": "Deans, N. D.; Naylor, K. L.; Srour, S.; Mallick, B.; Pham, T. K.; Edmunds, G. S.; Sheffield, J. W.; Ansell, O. F.; Edington-Siddon, C. D.; Burt, E. A.; Stafford, G.; Collins, M.; Humphreys, D.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.10.09.757903",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.10.09.757903v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\n\n肠致病性和肠出血性大肠杆菌（EPEC/EHEC）在全球范围内引起严重的腹泻性疾病，而日益加剧的抗菌药物耐药性使这一问题更加严峻。其致病机制依赖于附着与抹平（attaching and effacing）病变，即细菌形成肌动蛋白基座（actin pedestal）以黏附、增殖并破坏肠道微绒毛。为鉴定靶向该过程的新型抗毒力候选物，我们通过高内涵荧光显微镜定量基座形成，开展了高通量表型筛选。我们鉴定出抗癌核苷类似物氯法拉滨（clofarabine）是EPEC生长和致病的有力抑制剂。与其肿瘤学机制——诱导DNA链终止和细胞凋亡——不同，氯法拉滨与细菌的ATP依赖性过程竞争，从而阻碍基因转录、蛋白质合成及III型分泌系统（T3SS）功能。值得注意的是，EPEC通过切割氯法拉滨来对抗这种抑制，使蛋白质合成得以恢复、生长得以重启。此外，我们首次报道氯法拉滨可抑制人单核细胞中的蛋白质翻译，提示其对哺乳动物细胞具有尚未阐明的翻译层面影响。这些发现揭示了宿主与细菌的翻译过程是嘌呤抗代谢物的相互关联的脆弱靶点，提供了一种解除肠道病原体武装的新策略，同时揭示了一种细菌酶促机制，用于中和靶向宿主的治疗药物。",
+     "related_nodes": [
+      43
+     ]
+    },
+    {
+     "title_zh": "急性肾损伤向慢性肾病进展的蛋白质组学评估",
+     "title_en": "Proteomic Evaluation of the Progression from Acute Kidney Injury to Chronic Kidney Disease",
+     "authors": "Sims-Lucas, S.; Bons, J.; Pfister, K. E.; Silva-Barbosa, A.; Uhlean, R.; Goetzman, E. S.; Schilling, B.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.11.12.766273",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.11.12.766273v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\n\n急性肾损伤（AKI）与慢性肾脏病（CKD）是相互关联的综合征，具有重大的全球负担，然而驱动从急性损伤向慢性纤维化转变的分子机制仍未被完全理解。我们对急性肾损伤（缺血-再灌注损伤）和慢性肾脏病（单侧输尿管梗阻）小鼠模型进行了定量数据非依赖性采集质谱（DIA-MS）蛋白质组学分析，定量了5，985个蛋白质组。由1，475个共享蛋白（46%）构成的保守核心损伤反应以线粒体功能障碍、溶质转运体丢失以及免疫和细胞外基质重塑为主导。急性肾损伤以染色质重组、DNA损伤反应和急性炎症为特征，而慢性肾脏病则表现为持续性纤维化、补体激活和凝血。过氧化物酶体蛋白，包括β-氧化酶Acox1和Ehhadh，在急性肾损伤和慢性肾脏病中均持续下调，且无过氧化物酶体蛋白上调。两种模型还均表现出衰老相关分泌表型（SASP）样特征，包括Havcr1、Spp1、Igfbp7、Plau和溶酶体组织蛋白酶。我们进一步鉴定了95个候选进展标志物，包括Brat1和Col3a1，93个在慢性肾脏病中丢失更显著的蛋白质，14个方向性变化相反的蛋白质，以及7个疾病相关共表达模块。这些发现为急性肾损伤和慢性肾脏病中的生物标志物发现和治疗靶向（包括过氧化物酶体恢复和衰老细胞清除策略）提供了蛋白质组学资源。",
+     "related_nodes": []
+    }
+   ]
+  },
+  {
    "date": "2026-11-14",
    "papers": [
     {
@@ -325,5 +368,5 @@
    ]
   }
  ],
- "updated": "2026-11-14 11:35"
+ "updated": "2026-11-15 11:06"
 }
