@@ -1,6 +1,50 @@
 {
  "days": [
   {
+   "date": "2026-11-16",
+   "papers": [
+    {
+     "title_zh": "折叠模型能否区分真实结合物与虚假结合物？来自POISK专利抗体数据集的证据",
+     "title_en": "Can Folding Models Tell Binders from Bluffers? Evidence from POISK: The Patent-Derived Antibody Dataset",
+     "authors": "Tupikina, D.; Roncoli, A.; Bujotzek, A.; Abanades, B.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.10.24.761513",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.10.24.761513v1.full.pdf",
+     "text_type": "introduction",
+     "intro_zh": "蛋白质结构预测的快速进展已经改变了研究蛋白质-蛋白质相互作用的方式 [Jumper et al., 2021, Abramson et al., 2024]。诸如 AlphaFold-Multimer [Evans et al., 2021] 之类的共折叠（co-folding）模型已被应用于绘制大规模相互作用网络 [Bryant et al., 2022, Humphreys et al., 2021, Didi et al., 2026]，并且现已被常规用作抗体发现和从头蛋白质设计中的零样本（zero-shot）数字化筛选工具。其基本假设是：以界面预测模板建模分数（interface predicted template modelling，ipTM）等指标衡量的高结构置信度以及折叠自洽性意味着真实结合 [Watson et al., 2023, Pacesa et al., 2025, Ren et al., 2025, Stark et al., 2025]。尽管这种“置信度等于结合”的前提已被广泛采用，但严格的验证仍然匮乏。现有的基准测试依赖于蛋白质数据库（Protein Data Bank，PDB）[Berman et al., 2000] 和结构抗体数据库（Structural Antibody Database，SAbDab）[Dunbar et al., 2014]。由于这些正是用于训练模型的同一批数据库，时间留出集（temporal holdout sets）已成为标准评估策略 [Wohlwend et al., 2025, Smorodina et al., 2026]。此类测试集通常规模较小、覆盖的抗原多样性有限，并且始终存在通过训练数据中的同源序列造成数据泄漏的风险。为解决这些局限，我们挖掘了专利文献——这是一个庞大的、经过实验验证的抗体-抗原相互作用来源，其覆盖范围远远超出公共结构数据库的靶点空间。利用基于大语言模型（LLM）的提取流程，我们从美国专利中整理了 11,247 对新型抗体-抗原对，仅保留与 SAbDab 中任何抗体序列一致性低于 95% 的抗体。为构建具有挑战性的基准，我们将每个结合物的抗原与一个推定的非结合抗体配对，后者来源于人类抗体库（OAS）[Olsen et al., 2022a] 或通过种系回复（germline reversion）生成。由此得到的包含 22,494 个复合物的数据集为评估折叠模型作为结合分类器提供了严格的、经 SAbDab 过滤的测试平台。利用该基准，我们评估了六个结构预测模型，包括 AlphaFold-Multimer、Boltz-2 [Passaro et al., 2025]、IntelliFold v2 [Qiao et al., 2026]、OpenFold3 [Ahdritz et al., 2024]、Protenix-v1 [Zhang et al., 2026a] 和 Protenix-v2 [Zhang et al., 2026b]，考察其区分结合物与序列相似诱饵（decoys）的能力。我们发现，以界面为中心的 ipSAE（interaction prediction Score from Aligned Errors）指标 [Dunbrack Jr, 2025] 在该任务上始终优于 ipTM。最佳模型 Protenix-v2 在整个基准上达到 72% 的成对准确率（pairwise accuracy），当限制在结构置信度最高的 50% 配对时升至 87%，并能在 29% 的试验中从 50 个候选物中识别出真实结合物。除单模型置信度外，跨模型结构共识（cross-model structural consensus）提供了独立的判别信号：当三个或更多模型预测出相同的结合构象（DockQ ≥ 0.23）时，成对准确率达到 73.1%，覆盖约 54.2% 的配对。然而，表位定位（epitope localization）仍不可靠，最佳模型仅在 62.8% 的案例中接触到标注的表位残基。这些结果表明，当前的折叠模型为抗体筛选提供了有意义但尚不充分的信号，应辅以正交的实验或计算方法。",
+     "related_nodes": [
+      2,
+      12
+     ]
+    },
+    {
+     "title_zh": "网络建模揭示维生素B2调控AIFM2缺陷驱动的MASLD肝细胞死亡",
+     "title_en": "Network modeling identifies vitamin B2 control of AIFM2 deficit-driven hepatocyte death in MASLD",
+     "authors": "Weihs, J.; Baldo, F.; Cardinali, A.; Youssef, G.; Ludwik, K.; Haep, N.; Tang, P.; Kumar, P.; Engelmann, C.; Quach, S.; Meindl, M.; Kucklick, M.; Engelmann, S.; Chilian, B.; Rothe, M.; Lurje, I.; Hammerich, L.; Romeike, M.; Ramachandran, P.; Kendall, T. J.; Fallowfield, J. A.; Vallier, L.; Stachelscheid, H.; Sauer, I.; Tacke, F.; Bufler, P.; Hudert, C.; Han, N.; Rezvani, M.; Takebe, T.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.1101/2024.10.10.617610",
+     "pdf": "https://www.biorxiv.org/content/10.1101/2024.10.10.617610v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\n代谢功能障碍相关脂肪性肝病（MASLD）的药物发现由于网络效应仍然困难。我们开发了 MetaLiver，一个用于识别复杂相互作用组中可成药节点的公共资源。它整合了一个 MASLD 特异性知识图谱，该图谱改善了生物活性化合物的情境化，同时将计算时间缩短了 18.8 倍。将进展分辨的 bulk 和肝细胞特异性单细胞 MASLD 数据分层叠加到该图谱上，识别出维生素 B2 依赖性黄素蛋白组（FlavProt）作为一个损伤敏感网络。诱导多能干细胞来源的和原代人肝细胞验证了黄素辅因子补充可减轻 FlavProt 依赖性失调，在细胞应激下增强代谢功能。饱和黄素辅因子可用性削弱了人免疫细胞活化。在临床上，FlavProt 表达评分与回顾性分层 MASLD 患者的不良结局显著相关。我们从该评分中识别出氧化还原酶 AIFM2，并通过实验证实其损伤相关缺陷导致肝细胞死亡，但可通过黄素辅因子可用性加以控制。本研究揭示了 FlavProt 在 MASLD 中的关键性但可修饰作用，并建立了用于网络发现的 MetaLiver。",
+     "related_nodes": [
+      1,
+      9
+     ]
+    },
+    {
+     "title_zh": "评估multi-eGO模型对PDZ2-肽结合在突变下的预测能力",
+     "title_en": "Assessing multi-eGO Predictions of PDZ2-Peptide Binding across Mutations",
+     "authors": "Ardizzone, C.; Stegani, B.; Bacic Toplek, F.; Gianni, S.; Capelli, R.; Camilloni, C.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.09.10.750618",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.09.10.750618v1.full.pdf",
+     "text_type": "introduction",
+     "intro_zh": "蛋白质–肽相互作用介导了细胞信号传导的很大一部分，其定量表征——包括结合亲和力以及复合物形成与解离的动力学——对于理解从信号转导到蛋白质运输等过程至关重要1,2。PDZ 结构域是自然界中最常见的蛋白质–蛋白质相互作用模块之一。它们识别短线性基序，这些基序通常位于其伙伴蛋白的 C 端，并且经常以串联形式出现或存在于组织多蛋白信号复合物的支架蛋白中3,4。由于 PDZ–肽相互作用具有混杂性，并且可以通过单个氨基酸替换进行调节5，它们为检验计算模型在多大程度上能够捕捉蛋白质–肽识别的细微能量决定因素提供了一个有吸引力的系统。分子动力学（MD）模拟原则上提供了一条在原子分辨率下剖析此类相互作用的热力学和动力学的途径。然而，对于蛋白质–肽复合物，结合和解离事件的收敛采样在全原子、显式溶剂模型下仍然在计算上要求很高，因为即使在资源充足的模拟所能达到的时间尺度上，这些事件也是罕见的6,7。克服这一限制的一种方法由增强采样方法提供，这些方法通过引入外部偏置或修改的采样协议来加速对构象空间的探索，并可用于表征热力学、动力学，或在某些情况下两者兼而有之8–11。然而，它们的应用通常需要仔细识别与所关注过程相关的自由度和状态。简化模型，如粗粒化模型和基于结构的模型，通过降低计算成本并内在地加速对构象空间的探索提供了一种替代方案，代价是引入可能影响结构和动力学性质的近似12,13。因此，它们的准确性必须在实验验证之后才能用于预测，特别是当目标不仅仅是重现单个野生型（WT）复合物的结合，而是还要捕捉任一结合伙伴中的突变如何扰动结合时。Multi-eGO 是一种混合的可迁移/基于结构的原子分辨率模型，其中可迁移的先验相互作用通过源自参考数据（如结构、系综和模拟）的接触概率信息重新加权14,15。可迁移的先验势提供了对一般相互作用和构象偏好的基线描述，而参考数据通过观察到的接触概率引入系统特异性信息。该框架已被证明能够重现自组装过程16,17，并且在最近的应用中，能够重现蛋白质–配体复合物的结合热力学18。在先前的工作中，该方法定量地恢复了小分子配体与折叠蛋白（包括 T4-溶菌酶和 c-Src 激酶）以及与非结构化肽如 aβ42 结合的解离常数18。这一结果随后在胰蛋白酶上得到了重现19。同样的策略——即从非特异性表面接触推导分子间相互作用强度，而不对结合复合物进行额外拟合——是否能从小型、相对刚性的配体推广到柔性肽，仍然未知。该方法在蛋白质或肽中引入突变时是否仍具有预测性也不清楚。在这里，我们使用来自蛋白质酪氨酸磷酸酶嗜碱性样蛋白 PTP-BL 的 PDZ2 结构域与肽 EQVTAV 的复合物来解决这两个问题，该体系具有高分辨率结构数据以及实验测量的结合动力学和平衡常数。此类数据已被报道用于 WT 复合物以及多个 PDZ2 点突变体，包括 L18A、L25A、T35G、V44A 和 A53G，以及一个肽突变体 EQVTAV→EQVSAV20,21，参见图 1。这些突变均为保守替换。我们首先评估了 multi-eGO——在除先前为小分子建立的协议之外没有任何肽特异性调优的情况下训练——是否能够重现 PDZ2 的结构动力学以及 WT 复合物的结合动力学和热力学。然后，我们在不重复计算昂贵的训练程序的情况下，测试了同一模型是否能够预测由任一结合伙伴中的突变所引起的结合变化的方向和幅度。这代表了对可迁移性的远比重现单个 WT 复合物性质更为严格的检验。图 1. PDZ2 体系的结构和实验结合数据。左：PDZ2 结构的卡通表示（PDB: 1VJ6）20，本研究中突变的残基以棒状显示。右：如 Ref.21 所报道的，野生型和突变型 PDZ2 体系与 EQVTAV（上）和 EQVSAV（下）复合物的实验测量结合速率常数 𝑘on、解离速率常数 koff 和平衡解离常数 𝐾$。PDZ 配体残基按惯例相对于 C 端编号；例如，T−2 表示位于 C 端残基上游两个位置的苏氨酸残基。方法 常规分子动力学模拟。PDZ2 复合物和 apo 体系（PDZ2 和 EQVTAV）的全原子、显式溶剂参考模拟使用 GROMACS 分子动力学（MD）软件包22进行，采用 DES-Amber 力场23并结合 TIP4P-D 水模型24。蛋白质复合物的起始结构基于来自 PTP-BL 的 PDZ2 结构域的 NMR 结构，该结构域与腺瘤性息肉病大肠杆菌 APC 蛋白的 C 端肽复合（PDB: 1VJ620），而 apo PDZ2 结构基于相应的结构（PDB: 1GM125）。使用 Maestro（Schrödinger, LLC, New York, NY26）中的 Mutate Residue 工具将肽序列突变为 EQVTAV，所有体系均在 pH 7.2 下使用 Maestro 制备和质子化。PDZ2 复合物的训练模拟通过将一个肽放置在结合口袋中，并将另外四个肽放置在结合口袋外以采样与蛋白质表面的相互作用来进行。进行了四个独立的复合物模拟副本，每个长度为 1 μs。所有体系均在存在浓度为 800 mM 的 Na⁺ 和 Cl⁻ 离子的十二面体盒子中溶剂化，这既是为了重现 Gianni 等人21报道的实验条件，也是为了中和体系的总电荷。所有体系均经过三个连续阶段的能量最小化：最速下降直至最大力收敛至小于 1000 kJ mol⁻¹ nm⁻¹，共轭梯度直至最大力收敛至小于 100 kJ mol⁻¹ nm⁻¹，以及 L-BFGS 直至最大力收敛至小于 10 kJ mol⁻¹ nm⁻¹。然后，最小化后的构型在 NPT 系综中于 283 K 和 1 bar 下平衡 0.5 ns，蛋白质原子被限制在其能量最小化位置。模拟使用 leap-frog 算法以 2-fs 时间步长进行积分，并使用 LINCS27约束涉及氢原子的键。非键相互作用的截断值设为 1 nm，并使用粒子网格 Ewald28处理长程",
+     "related_nodes": []
+    }
+   ]
+  },
+  {
    "date": "2026-11-15",
    "papers": [
     {
@@ -368,5 +412,5 @@
    ]
   }
  ],
- "updated": "2026-11-15 11:06"
+ "updated": "2026-11-16 11:09"
 }
