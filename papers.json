@@ -1,6 +1,48 @@
 {
  "days": [
   {
+   "date": "2026-11-18",
+   "papers": [
+    {
+     "title_zh": "人工智能发现新型抗病毒药物：体外与体内实验结果",
+     "title_en": "Discovery of new antiviral agents through artificial intelligence: in vitro and in vivo results",
+     "authors": "Roza Izmailyan, Mher Matevosyan, Hamlet Khachatryan, Anastasiya Shavina, Smbat Gevorgyan et al.",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.22230v1",
+     "pdf": "https://arxiv.org/pdf/2611.22230v1",
+     "text_type": "introduction",
+     "intro_zh": "传统抗病毒研究与疫苗开发方法面临流程耗时的挑战。快速发现新型抗病毒药物（antiviral agents）的极端重要性怎么强调都不为过，尤其是在需要快速响应措施的新发病毒（emerging viruses）背景下。尽管疫苗在控制病毒传播中发挥关键作用，但其开发和制造周期往往长达数月甚至数年。因此，抗病毒药物（antiviral drugs）成为抵御不断演变的病毒威胁的第一道防线，在有效疫苗研发成功之前，对重症感染的管理以及降低发病率和死亡率具有至关重要的作用。在不断演变的病毒威胁背景下，将前沿技术整合到抗病毒药物发现（antiviral drug discovery）中成为必要步骤。机器学习（machine learning, ML）是一个新兴领域，已对药物发现过程产生积极影响（Vamathevan et al., 2019; Patel et al., 2020）。目前，不同的机器学习算法被应用于药物发现的各个方面，如超大规模化合物库的虚拟筛选（virtual screening）、毒性和ADME性质的预测、药物重定位（drug repurposing）、优化临床试验设计以及分析生物学数据，并取得了不同程度的成功。强化学习（reinforcement learning, RL）是机器学习的一种子类型，基于奖励期望行为和惩罚非期望行为的机制，已被成功用于在计算机中生成具有理想药理学性质的新型化合物（Popova et al., 2018; Wang et al., 2022）。最近，我们利用团队开发的基于深度强化学习（deep RL）的分子设计平台，成功生成了针对甲型流感病毒（influenza A virus, IAV）天然和突变神经氨酸酶（neuraminidase, NA）的新化学实体（new chemical entities, NCEs）（Matevosyan et al., 2022）。强化学习生成的新化学实体具有非唾液酸样骨架，与奥司他韦（oseltamivir）等现有药物无相似性。有趣的是，计算实验揭示，其中一些新化学实体不仅对甲型流感病毒的神经氨酸酶表现出优异的结合亲和力（binding affinity），而且对乙型流感病毒（influenza B virus, IBV）的神经氨酸酶也同样如此。这些计算结果促使我们进一步探索深度强化学习在设计靶向甲型和乙型流感病毒神经氨酸酶的分子方面的潜在应用。在本研究中，我们扩展了同一基于强化学习的分子设计平台的应用，设计了一组能够抑制甲型和乙型流感病毒神经氨酸酶的新型化合物。我们合成了9个强化学习生成的化合物，并在酶学实验中研究了它们的抑制活性。其中两个化合物在低微摩尔浓度下即表现出对甲型和乙型流感病毒神经氨酸酶的双重抑制作用。此外，这些化合物在体外（in vitro）和体内（in vivo）均表现出显著的抗病毒活性。我们的结果凸显了深度强化学习在抗病毒药物发现中的高效性，为发现有效抗病毒药物提供了新途径。\n\n材料与方法\n\n基于强化学习的分子设计\n\n强化学习的核心思想是：一个智能体（agent）在环境（environment）中行动，其目标是学习最优策略（optimal policy）以最大化标量奖励信号（scalar reward signal）。在本工作中，强化学习框架被表述为马尔可夫决策过程（Markov Decision Process, MDP）。从初始时间步t=0开始，考虑初始状态St（在此情况下为苯环），智能体从可用动作集A(St)中选择一个动作At，并从环境中获得奖励Rt。可用动作集A(St)由基于原子和基于片段的动作组成。根据所选动作At，当前状态St对应的分子被修饰，状态St转移至新状态St+1。该迭代过程持续进行，直至智能体在t=T时到达终止步骤，或通过选择“不变”动作决定终止。上述强化学习工作流程不依赖任何外部数据集，而是由智能体直接从与环境的交互中学习。这种方法能够实现新型分子骨架的无偏生成，而无需依赖现有数据。关于马尔可夫决策过程结构、智能体实现细节及奖励塑造（reward shaping）的更多信息见补充材料。\n\n化学相似性计算\n\n前31个化合物与奥司他韦的化学相似性计算基于RDKit对Morgan指纹（Morgan Fingerprint）的实现（半径2，nBits 2048）（https://www.rdkit.org）。计算了所有可能的配对相似性，并剔除了相同分子之间的相似性，最终得到31×31-31=930个相似性值。\n\n分子对接与动力学模拟\n\n甲型和乙型流感病毒神经氨酸酶的晶体结构从蛋白质数据库（Protein Data Bank, PDB）获取（甲型流感病毒NA——PDB ID: 6HP0; 7S0I，乙型流感病毒NA——PDB ID: 4CPY, 4CPO）。化合物和奥司他韦的分子对接（molecular docking）研究使用ICM-Pro软件实现（Abagyan and Totrov, 1994）。“对接力度”（docking effort）和“生成构象数”（number of generated conformers）分别设置为10和15。称为“对接力度”的参数量化了模拟的全面程度，并直接影响模拟的持续时间。在疏水口袋（hydrophobic pockets）的情况下，通常建议使用值为1。然而，当进行涉及溶剂暴露口袋或含有金属离子的口袋的对接研究时，该参数可以增加。在我们的情况下，神经氨酸酶的结合口袋含有钙离子。结合位点定义为共结晶配体（co-crystallized ligand）周围区域。确定结合口袋后，以每侧4 Å的偏移量构建结合盒（binding box）。对于甲型流感病毒神经氨酸酶，盒的高度、宽度和长度分别为26.5 Å、25 Å和18.8 Å。对于乙型流感病毒神经氨酸酶，参数为24 Å、25.5 Å和19.3 Å。分子动力学（MD）模拟使用GROMACS 2023.1软件包进行，蛋白质和配体参数化分别采用ff14SB和GAFF力场（force field）（Wang et al., 2004; Maier et al., 2015）。选择309.75 K温度旨在模拟病毒性疾病发热出现前的早期阶段。采用SHAKE算法维持氢键的完整性，积分步长（integration step）为2 fs（Ryckaert et al., 1977）。通过在模拟过程中防止这些键的拉伸或压缩，SHAKE确保模拟保持准确和真实。每次模拟包括10 ns的系统平衡（equilibration）期和30 ns的标准分子动力学模拟，模拟时间步长为2 fs。每次分子动力学模拟的MM/PBSA计算和RMSD分析使用gmx_MMPBSA工具进行（Valdés-Tresanco et al., 2021）。在使用gmx_MMPBSA进行计算之前，移除了带有周期性边界条件（periodic boundary conditions）的GROMACS输出轨迹。\n\n细胞、化合物与病毒\n\nMDCK（Madin-Darby犬肾）细胞在37 °C下培养于Eagle最低必需培养基（Biowest，法国）中，培养基补充有10%胎牛血清（Biowest，法国）、2 mM L-谷氨酰胺（Lonza，瑞士）、100 IU/ml青霉素（Reyoung，中国）和100 μg/ml链霉素（Arterium，乌克兰）。用于体外实验的化合物由药明康德（WuXi AppTec，中国）合成。合成路线和详细信息见补充材料。奥司他韦购自药明康德。在甲型流感病毒研究中，我们使用了A/St.Petersburg/63/2020（H1N1 pdm09）、A/Vladivostok/2/2009（H275Y突变体）和A/WSN/33（H1N1）毒株。在乙型流感病毒研究中，使用了B/Samara/32/2018（Yamagata谱系）毒株。所有病毒均由Smorodintsev流感研究所（俄罗斯圣彼得堡）惠赠。\n\n酶抑制实验\n\n将系列稀释的化合物（8个剂量，5倍稀释，双复孔）加入96孔板中，每孔25 µL。然后向孔中加入25 µL稀释的病毒。化合物与病毒在37°C下孵育30分钟。孵育后，向孔中加入稀释的MUNANA底物，每孔50 µL",
+     "related_nodes": [
+      22
+     ]
+    },
+    {
+     "title_zh": "计算鉴定与体外评价黄芪甲苷II作为登革病毒NS1诱导内皮高通透性抑制剂",
+     "title_en": "Computational identification and in vitro evaluation of astragaloside II as an inhibitor of dengue virus NS1-induced endothelial hyperpermeability",
+     "authors": "Jantrachotechatchawan, C.; Chawnawa, W.; Leephatarakit, N.; Maneepitasut, W.; Maneerattanasak, S.; Manoret, P.; Poyseungnoen, K.; Boonarkart, C.; Puttikhunt, C.; Avirutnan, P.; Noisakran, S.; Auewarakul, P.; Duangrattanalert, K.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.11.12.766166",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.11.12.766166v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\n\n背景 登革热是一种蚊媒病毒性疾病，重症病例以血浆从血管渗漏为特征。登革病毒分泌型非结构蛋白1（NS1）可破坏内皮屏障，是一个药物靶点，但目前尚无获批的抗病毒药物。本研究旨在鉴定靶向NS1的化合物，并检验所选化合物黄芪甲苷II（ASII）是否能拮抗NS1诱导的内皮高通透性。方法/主要发现 我们构建了一个深度学习模型，该模型可根据化学指纹和蛋白质序列预测化合物-靶点结合，并利用该模型针对四种登革病毒血清型的NS1对177种天然化合物进行了预筛选。该模型在BindingDB留出集和两个独立测试集上的召回率和F1分数均优于DeepConv-DTI基线。ASII被预测可与NS1结合，并被对接至NS1二聚体上。在人微血管内皮细胞（HMEC-1）中，NS1将相对跨内皮电阻降低至0.56（P < 0.001），而10-30 {micro}g/mL的ASII可使电阻保持在接近对照水平，且未检测到细胞毒性。ASII未减少NS1的内化。在竞争性酶联免疫吸附试验中，ASII以剂量依赖性方式抑制NS1与硫酸乙酰肝素的结合（半数最大抑制浓度为51.12 {micro}g/mL；95%置信区间为47.91-56.24 {micro}g/mL），尽管在保护性剂量下的抑制率仅为8-26%。结论/意义 ASII可作为NS1诱导的内皮高通透性调节剂进行进一步研究的候选化合物。其机制尚未阐明，需要进一步研究。本研究未测试其与NS1的直接结合、在感染细胞中的活性以及在其它内皮模型中的效应，计算预测结果需要实验证实。",
+     "related_nodes": [
+      40
+     ]
+    },
+    {
+     "title_zh": "每一次测量、每一个方向、同时进行：面向分子与光谱的多模态流匹配",
+     "title_en": "Every Measurement, Every Direction, All at Once: Multimodal Flow Matching for Molecules and Spectra",
+     "authors": "Thorben Prein, Elton Pan, Rafael Gómez-Bombarelli, Santiago Miret",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.22098v1",
+     "pdf": "https://arxiv.org/pdf/2611.22098v1",
+     "text_type": "introduction",
+     "intro_zh": "在科学领域，实验可能代价高昂，但往往能提供多种互补的信息来源：一个分子将三维结构与模拟的 UV、IR 和 Raman 光谱配对（图 1 左）[1, 2]，每一种都提供了对同一物理实体的不同视角 [3]。这些视角在物理上是相互关联的，分子结构决定光谱响应，而 UV、IR 和 Raman 光谱则约束与之相符的结构。标准的条件生成模型通常只学习这种关系的一个方向，例如从光谱生成分子结构。我们认为这种不对称性源于任务设置而非数据本身：当科学测量由共享的底层系统耦合并且在训练时共同出现时，每个视角都携带关于该系统的监督信息 [4, 5]。对生成方向施加约束的生成模型可能会将未利用的监督信号搁置一旁。因此，我们提出多模态生成模型应在无此类约束的情况下进行训练，如图 2a 所示。每个模态都可以充当目标或条件。因此，一个昂贵的样本可为同一模型产生多个受监督的去噪任务。我们的方法显著扩展了模型在推理时的能力（图 2c）。它可以在任意观测模态子集和目标模态子集之间进行推理，解锁诸如与光谱库匹配、缺失模态填补、结构到光谱生成以及跨光谱翻译等能力。基于这一原则，我们提出了 MOSAIC，一种用于分子结构与光谱之间任意到任意生成的多模态流匹配（flow matching）模型。MOSAIC 使用 UAE-3D 自编码器 [6] 将分子结构编码为逐原子潜在表示，同时将 UV、IR 和 Raman 光谱表示为光谱 token 序列。这些表示由单个非等变 MMDiT [7] 联合建模，并以整流流（rectified-flow）目标进行训练，以对四种模态的任意子集进行去噪。与先前工作中使用的等变去噪器 [8] 不同，我们的模型在学习到的结构表示上运行。在 QM9S 数据集上，我们观察到在结构解析方面相较于单模态生成有 5% 的多模态优势（图 2b）。最佳 MOSAIC 配置在 QM9S 上实现了 88.8% 的结构恢复率，以超过 20% 的优势优于最佳基线，同时实现更快的推理。除光谱到结构生成之外，MOSAIC 还支持通过光谱空间中的匹配进行结构解析。我们通过针对实验 IR 光谱的结构条件检索展示了这一反向方向（第 4.1 节）。这些结果共同说明了任意到任意训练如何能够改进结构生成，同时扩展单个模型所支持的任务范围。我们的贡献如下：1. 我们提出了 MOSAIC，一种在多模态科学数据的任意到任意生成（图 3a）上训练的流匹配模型，其中随机目标/条件掩码使每个模态能够在单一统一模型下同时充当目标和条件。我们证明 MOSAIC 在光谱到结构任务上达到了最先进的性能，且推理速度更快。2. 我们展示了 MOSAIC 解锁了新能力，如在单一模型内进行双向生成和缺失模态补全（图 4）。我们展示了这如何实现针对实验 IR 光谱的结构条件检索（第 4.1 节）。3. 我们研究了 MOSAIC 如何随模型规模和训练数据扩展（图 5）。线性探测进一步表明，从结构和光谱联合学习比仅从结构训练能产生更丰富的分子表示（图 6）。",
+     "related_nodes": []
+    }
+   ]
+  },
+  {
    "date": "2026-11-17",
    "papers": [
     {
@@ -457,5 +499,5 @@
    ]
   }
  ],
- "updated": "2026-11-17 13:15"
+ "updated": "2026-11-18 12:43"
 }
