@@ -1,6 +1,51 @@
 {
  "days": [
   {
+   "date": "2026-11-19",
+   "papers": [
+    {
+     "title_zh": "STORM：轻量级无结构结合亲和力预测模型",
+     "title_en": "STORM: A Lightweight Structure-Free Model for Binding Affinity Prediction",
+     "authors": "Ayush Pandit, Rohan V. Koodli, Wei Deng, Roxana Daneshjou, Ron O. Dror",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.23777v1",
+     "pdf": "https://arxiv.org/pdf/2611.23777v1",
+     "text_type": "introduction",
+     "intro_zh": "寻找能与靶标蛋白紧密结合的分子是药物发现中关键的早期步骤（Paggi et al., 2024）。然而，尽管经过数十年的研究，通过计算准确预测结合亲和力仍然是一个未解决的挑战。随着研究人员可获得的类药候选分子库增长至数万亿个化合物（eMolecules, 2022; Enamine & Chemspace, 2024），拥有快速且准确的结合亲和力预测方法变得更加重要。一个主要的研究方向集中于开发基于物理的模拟方法来预测结合亲和力（Wang et al., 2015）。诸如自由能微扰（FEP）之类的方法，在提供靶标蛋白与小分子结合结构的情况下，可以做出与实验测量高度相关的预测。然而，设置FEP模拟需要仔细的专家校准、高质量的结构以及大量的计算资源——每次预测需要数小时的GPU时间（Crivelli-Decker et al., 2024; Wang et al., 2015; Heinzelmann & Gilson, 2021）。最近，诸如Boltz-2（Passaro et al., 2025）之类的机器学习方法报告了在结合亲和力预测上接近FEP的性能，而计算成本远低得多。这些方法是共折叠基础模型（cofolding foundation models），或类似于AlphaFold3（Abramson et al., 2024; Shen et al., 2026）的机器学习架构，后者是为生物分子结构预测而设计的。Boltz-2开创了将这些模型扩展至同时预测结合亲和力的方法（Passaro et al., 2025）。后续研究已将Boltz-2应用于亲和力预测（Fry et al., 2026; Amini et al., 2026），另有若干共折叠模型采用相同方法加入了亲和力预测功能（Shenoy et al., 2026; SandboxAQ, 2026）。*同等贡献。†部分工作于Infrinia AI实习期间完成。1 arXiv:2611.23777v1 [q-bio.QM] 18 Nov 2026 Preprint\n\n共折叠模型在大量实验生物分子结构数据以及更大量的以多序列比对（MSA）形式存在的生物分子序列数据上进行训练（Passaro et al., 2025; Abramson et al., 2024; The OpenFold3 Team, 2025; Wohlwend et al., 2024）。为增加亲和力预测能力，它们还在公开报道的、涵盖许多不同蛋白靶标上化合物实验结合亲和力的数据集上进行训练。这些方法比FEP快得多，但它们仍然需要大量计算资源来完成药物发现中的大规模虚拟化合物筛选，限制了可筛选化合物的数量（Passaro et al., 2025; SandboxAQ, 2026; Lukauskis et al., 2025; Singh et al., 2026）。由于这些方法需要在包含许多不同类型数据的超大规模数据集上进行训练，当少量额外实验数据出现时，对它们进行重新拟合或微调也可能很困难（Kumar et al., 2022; Amini et al., 2026; Liao et al., 2026）。用于训练共折叠模型的大部分数据——特别是实验结构和MSA——对其结构预测能力至关重要。然而，目前尚不清楚这些数据在多大程度上贡献于其亲和力预测能力。一个忽略三维结构、仅基于实验结合亲和力训练的更为简单的模型，是否能够达到相似的性能？数十年的研究表明，仅在单个靶标的亲和力数据上训练的模型，可以利用相似分子更可能具有相似结合亲和力这一特性，在该靶标上实现合理的结合亲和力预测（Cherkasov et al., 2014; Zhang et al., 2024）。近期工作表明，结合亲和力中的这些化学趋势可以在序列同一性较低的蛋白靶标之间迁移，这提示学习在蛋白靶标之间迁移历史亲和力关系可能为强结合亲和力预测提供一条替代路径（Mattsson & Walters, 2026）。聚焦于这一信号还将消除与MSA和结构数据相关的大部分训练和建模复杂性。受这些观察启发，我们提出了STORM，即Similarity Transfer from Observed Reference Molecules（从观测参考分子进行相似性迁移）。STORM是一种无结构的结合亲和力预测器，专注于学习可在蛋白靶标之间迁移的小分子亲和力之间的关系。我们利用了这一事实：小分子的不同简单表示，例如各种化学描述符或不同的分子指纹算法，可以捕获分子间不同的活性关系并提供互补信号。我们还将这一技术应用于构建简单的蛋白靶标表示，然后在此类靶标和分子表示的融合上独立训练并集成许多小型模型。我们做出四项主要贡献：（1）我们提出了一种无结构方法，用于组合简单的、互补的蛋白和小分子表示，并可在历史亲和力测量数据上进行训练。（2）在四个亲和力基准上，STORM取得了比五个重新训练的无结构基线更高的Pearson相关系数。与Boltz-2相比，STORM在ChEMBL35时间分割上取得了更高的Pearson相关系数，在OpenFE、FEP+4和CASP16上取得了相当的相关系数。STORM的低推理和训练成本支持大规模虚拟筛选以及在新亲和力测量数据出现时进行模型更新。（3）我们使用匹配消融实验来量化STORM集成中不同组件对性能的影响。（4）我们表明，在少量亲和力测量数据上进行微调，可提高训练集中未出现的全部三个靶标上留出化合物的Pearson相关系数（第4.6节）。除这些实践进展外，我们的工作还具有重要的长期意义，提示了通过结合共折叠模型与基于物理的亲和力预测器的优势来大幅提升基于机器学习的亲和力预测准确性的机会。",
+     "related_nodes": [
+      28,
+      13
+     ]
+    },
+    {
+     "title_zh": "AlphaFold对非球状蛋白预测的偏差与局限",
+     "title_en": "Biases and Limits of AlphaFold Predictions for Non-Globular Proteins",
+     "authors": "Maria Cristina Aspromonte, Alexander M. Monzon, Miguel A. Andrade-Navarro, Oriol Bárcenas, Viktor Bartosik et al.",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.24546v1",
+     "pdf": "https://arxiv.org/pdf/2611.24546v1",
+     "text_type": "introduction",
+     "intro_zh": "**非球状蛋白 AlphaFold 预测的偏差与局限**\n\nMaria Cristina Aspromonte 1, Alexander M. Monzon 1, Miguel A. Andrade-Navarro 2, Oriol Bárcenas 3, Viktor Bartosik 4, Pau Bernadó 5, Juan Cortés 6, Zsuzsanna Dosztanyi 7, Gabor Erdos 8, Isabella C. Felli 9, Helena Gradišar 10, San Hadži 11, Tamás Hegedűs 12, Khalil Joron 13, Pavel Kaderavek 4, Eitan Lerner 13, Dirk Linke 14, Pablo Mier 15, Ana Pantelić 16, Roberta Pierattelli 9, Salvador Ventura 3, Marija Vidović 16, Metaxia Vlassi 17, Lukas Zidek 4 and Silvio C.E. Tosatto 1,*\n\n1 - 意大利帕多瓦大学生物医学科学系\n2 - 德国美因茨约翰内斯·古腾堡大学生物学系生物体与分子进化研究所\n3 - 西班牙巴塞罗那自治大学生物技术与生物医学研究所及生物化学与分子生物学系，以及西班牙国家研究委员会（CSIC）加泰罗尼亚高级化学研究所（IQAC）\n4 - 捷克共和国马萨里克大学理学院国家生物分子研究中心及中欧技术研究所\n5 - 法国蒙彼利埃大学结构生物学中心，INSERM，CNRS\n6 - 法国图卢兹大学，CNRS，LAAS，图卢兹\n7 - 法国蒙彼利埃大学 CRB，蒙彼利埃\n8 - 匈牙利布达佩斯厄特沃什·罗兰大学生物化学系\n9 - 意大利佛罗伦萨大学磁共振中心（CERM）及 Ugo Schiff 化学系（DICUS）\n10 - 斯洛文尼亚卢布尔雅那国家化学研究所合成生物学与免疫学系\n11 - 斯洛文尼亚卢布尔雅那大学化学与化学技术学院物理化学系\n12 - 匈牙利布达佩斯塞梅维什大学口腔修复学系\n13 - 以色列耶路撒冷希伯来大学埃德蒙·J·萨夫拉校区理学院亚历山大·西尔伯曼生命科学研究所生物化学系\n14 - 挪威奥斯陆大学生物科学系，奥斯陆\n15 - 西班牙塞维利亚巴勃罗·德·奥拉维德大学实验科学学院安达卢西亚发育生物学中心（CABD, UPO-CSIC-JA）\n16 - 塞尔维亚贝尔格莱德大学分子遗传学与基因工程研究所（IMGGE）微生物学与植物生物学系\n17 - 希腊雅典国家科学研究中心“DEMOKRITOS”生物科学与应用研究所\n* - 通讯作者：silvio.tosatto@unipd.it\n\nAlphaFold 已彻底改变了蛋白质结构预测，使结构模型在生命科学各领域得以广泛获取。我们探索了经实验验证的非球状蛋白案例，以揭示预测结果在何处与具有生物学意义的结构状态发生偏离，以及分子环境如何塑造这些差异，从而指导对 AlphaFold 模型进行更为明智的解读。\n\n**超越单一结构：AlphaFold 与 NGPs**\n\n近年来，随着 AlphaFold（AF）1 的开发以及基于其概念和架构的后续工作，蛋白质结构预测取得了巨大进展。AlphaFold 引入了一种新颖的神经网络架构，能够利用多序列比对中编码的进化信息来捕捉氨基酸之间的长程关系。AlphaFold2（AF2）2 通过端到端的神经网络架构实质性地推进了这一框架。2024 年 5 月，AlphaFold3（AF3）3 发布，引入了一种基于扩散建模（diffusion modelling）的大幅更新架构——这是一种逐步精化结构预测的生成式方法。这使得 AF3 能够预测包含蛋白质、核酸、小分子、离子和修饰残基的复合物的联合结构。这些预测的准确性通常通过其与蛋白质数据库（PDB）4 中结构的匹配程度来评估，但准确性可能差异很大，且并未考虑蛋白质固有的柔性和动态特性。事实上，人类蛋白质组中相当一部分 AlphaFold 预测置信度低的区域，很可能包含缺乏稳定三维结构、而是采取快速互变动态构象集合的区域。这些非球状蛋白（NGPs）涵盖了一个广泛而异质的群体，包括内在无序蛋白（IDPs）、重复蛋白和低复杂度区域等 5,6。在这方面，例如利用 AlphaFold 预测蛋白质无序性的可能性，已在内在无序关键评估（CAID）实验框架内进行了系统性探索，该实验对无序预测的计算方法进行基准测试。",
+     "related_nodes": [
+      11
+     ]
+    },
+    {
+     "title_zh": "TabBioMed：大规模生物医学表格学习基准",
+     "title_en": "TabBioMed: A Large-Scale Benchmark for Biomedical Tabular Learning",
+     "authors": "Pau Mateo-Bernadó, Saivenkata Nagavyjayanthi Polapragada, David Bonet, Pol Arbiol Rakuljic, Laia Mogas Pladevall et al.",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.23779v1",
+     "pdf": "https://arxiv.org/pdf/2611.23779v1",
+     "text_type": "introduction",
+     "intro_zh": "表格数据在生物医学机器学习中被广泛使用，用于表示电子健康记录（EHR）、基因组学、蛋白质组学、代谢组学、药物发现和单细胞研究中的结构化信息。这些数据集支撑着对临床决策和生物学发现至关重要的预测任务[1, 2]。尽管现代机器学习方法取得了成功，包括梯度提升决策树、深度神经网络以及新兴的表格基础模型（TFMs），但在生物医学预测场景中的系统性比较仍然碎片化且不一致。近期的基准测试工作改善了表格模型的可重复性和系统性评估[3]。特别是，TabArena[4]强调标准化评估流程、精心的数据集整理和持续基准测试。然而，现有基准主要针对通用表格数据设计，并未系统性地捕捉生物医学数据集所特有的挑战——这些数据集往往表现出差异极大的样本量和特征维度[5, 6]、普遍存在的缺失值[7]、类别不平衡以及模态特定的测量过程[8]。因此，现有基准的结论可能无法直接迁移到许多生物医学应用中。先前的研究比较了神经网络、梯度提升决策树[9, 10]以及最近的表格基础模型[11]，但主要是在非生物医学数据集上进行的。因此，目前仍缺乏一个覆盖生物医学全场景范围的综合基准。在本工作中，我们通过TabBioMed¹来填补这一空白，这是一个面向生物医学表格机器学习的大规模基准套件。我们的主要贡献包括：(i) 大规模生物医学数据集整理，涵盖八个领域的94个生物医学表格数据集，包括EHR、基因组学、转录组学、药物发现与分子性质、蛋白质组学、代谢组学、单细胞组学和系统生物学；(ii) 统一预处理框架，具有标准化但灵活的流程，在保留领域特定结构的同时实现公平且可重复的比较；(iii) 全面的模型评估，对23个模型进行基准测试，涵盖线性方法、梯度提升决策树、深度表格架构和表格基础模型；(iv) 稳健的基准测试协议，在数据集、模型和数据场景之间提供标准化评估，以支持生物医学机器学习中可靠的大规模基准测试。我们分析了模型家族在不同领域中的表现（图1）、预测性能与计算效率之间的关系，以及数据集特征如何影响性能变化。表格基础模型成为预测性能最强的模型家族，尽管这一优势反映的是家族层面的表现，而非单个模型的普遍优越性。由于计算限制，基础模型在更大、更高维数据集上的缺失评估更为频繁，但敏感性分析表明，在完整案例分析（complete-case analysis）和缺失分数插补下，主要排名趋势仍然保持。在有限的计算预算下，基于树的方法和调优良好的多层感知机（MLPs）仍然极具竞争力，且往往更为可取。总体而言，我们的分析表明性能高度依赖于具体场景。该基准并非识别一个普遍最优的方法，而是揭示了跨数据集、领域和计算约束的系统性差异，从而支持更明智且具有数据集感知的模型选择。\n\n¹https://huggingface.co/spaces/TabBioMed 2",
+     "related_nodes": [
+      39
+     ]
+    }
+   ]
+  },
+  {
    "date": "2026-11-18",
    "papers": [
     {
@@ -499,5 +544,5 @@
    ]
   }
  ],
- "updated": "2026-11-18 12:43"
+ "updated": "2026-11-19 12:32"
 }
