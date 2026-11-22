@@ -1,6 +1,46 @@
 {
  "days": [
   {
+   "date": "2026-11-22",
+   "papers": [
+    {
+     "title_zh": "通过逆节点频率变换缓解知识图谱拓扑偏倚以改进靶点-不良事件关联预测",
+     "title_en": "Improving Target-Adverse Event Association Prediction via Inverse Node Frequency Transformation to Mitigate Knowledge Graph Topological Bias",
+     "authors": "Egbelo, T. M.; Jeynes, J. C. G.; Kurt, Z.; Veettil, R. V.; Gillet, V. J.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.11.19.767791",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.11.19.767791v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\n\n动机：识别治疗性蛋白靶点与不良事件（AE）之间的显著关联是药物安全性评估的关键组成部分。为加速这一过程，已开发出机器学习方法，将整合分子相互作用及其他关键生物医学知识的网络数据中的这些关联作为边进行预测。然而，这些网络常常存在拓扑不平衡问题，即少数“枢纽”节点决定了预测信号。这种“拓扑偏倚”或“度偏倚”可能导致在新颖或研究不足的靶点上表现不佳，而这些靶点恰恰是最需要安全性推断的。结果：我们提出了逆节点频率（INF），一种普遍适用的基于节点度的方法，用于缓解拓扑偏倚。利用一个丰富的生物医学知识图谱和我们精心整理的靶点-不良事件关联数据，我们将INF作为一种归一化程序应用于一类称为元路径（metapath）的图衍生特征，并评估其所得的靶点-AE关联预测性能。我们的结果表明，与未变换的元路径特征以及一种广泛使用的已有归一化方法相比，INF显著提高了低度靶点的真阳性率（TPR/召回率），同时在hits@k这一基于知识图谱推断的排序指标上也取得了极具竞争力的表现。我们还在一个此前从未用于建模的外部靶点-AE关联集上评估了INF，结果显示INF相较于两个基准方法同样表现出更优的鲁棒性。",
+     "related_nodes": [
+      1
+     ]
+    },
+    {
+     "title_zh": "轨迹拟合不足以识别因果边：面向药物作用机制跨组学数字孪生的白盒掩码ODE基准",
+     "title_en": "Trajectory fit alone does not identify causal edges: a white-box masked ODE benchmark for trans-omics digital twins of drug action mechanisms",
+     "authors": "Zhang, Z.; Jia, L.; Pan, Y.; Zhao, H.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.09.22.753490",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.09.22.753490v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\n\n动态多组学模型从轨迹中推断药物机制，但仅凭轨迹准确性无法验证所学到的调控边（regulatory edges）在机制上是否正确。我们提出一个问题：在观测与优化预算下，拟合时间序列动态在多大程度上能够识别可干预的因果边。我们构建了带有候选边掩码（candidate-edge masks）的白盒常微分方程（ordinary differential equations, ODE），用于基因表达、蛋白质、信号传导和代谢物动态，采用小鼠肝脏跨组学拓扑结构（trans-omics topology）和具有真值的半合成时间序列。在无噪声、完整、密集采样的数据下，从头训练（from-scratch training）对边的排序接近随机水平（边分类的受试者工作特征曲线下面积，edge-class area under the receiver-operating characteristic curve，0.48–0.53）；不可达到的预言机初始化（oracle-initialized）上界在同一指标上达到 0.94–0.99。未观测层吸收了误差。在真值敲除（ground-truth knockout）测试中，开发批次的终点符号准确率（endpoint-sign accuracy）对于一跳非收敛靶点为 67.9%，而对于两跳靶点为 33.3%。在所测试的实际预算范围内，拟合未能产生可靠的边恢复；因此，仅凭轨迹拟合无法建立机制性识别。该基准支持多组学模型中的机制审计和探索性的逐预测置信度分级（per-prediction confidence grading）。",
+     "related_nodes": []
+    },
+    {
+     "title_zh": "利用化学探测数据与MXfold2学习RNA二级结构",
+     "title_en": "Learning RNA secondary structure from chemical probing with MXfold2",
+     "authors": "Yamauchi, R.; Tsukiyama, S.; Sato, K.",
+     "source": "bioRxiv",
+     "url": "https://www.biorxiv.org/content/10.64898/2026.11.18.767577",
+     "pdf": "https://www.biorxiv.org/content/10.64898/2026.11.18.767577v1.full.pdf",
+     "text_type": "abstract",
+     "intro_zh": "摘要\nRNA二级结构预测器的训练受限于稀缺的参考注释，即便化学探测能够产生丰富的核苷酸水平测量数据。这些测量数据能够提示配对状态，但无法识别碱基配对伙伴。在此，我们扩展了MXfold2——该模型结合了神经网络与热力学折叠评分——使其能够从探测图谱中学习，并仅凭序列预测RNA二级结构。我们引入了三个训练目标。其中一个从探测辅助的目标结构中进行学习。另外两个采用隐式最大似然估计，通过离散折叠过程传递来自反应性排序损失和似然损失的代理梯度。模拟实验、RNAgym测量以及外部结构测试表明，当化学监督与结构预训练及回放相结合时，化学一致性得到改善，精确碱基对预测也获得提升。因此，探测图谱能够拓宽可为纯序列结构预测提供信息的RNA范围，包括那些完整结构注释较少的RNA群体。",
+     "related_nodes": []
+    }
+   ]
+  },
+  {
    "date": "2026-11-21",
    "papers": [
     {
@@ -630,5 +670,5 @@
    ]
   }
  ],
- "updated": "2026-11-21 12:18"
+ "updated": "2026-11-22 11:29"
 }
