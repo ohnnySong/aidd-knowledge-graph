@@ -1,6 +1,51 @@
 {
  "days": [
   {
+   "date": "2026-11-27",
+   "papers": [
+    {
+     "title_zh": "DiffER²：面向SMILES适配粒子引导的逆合成预测扩散集成方法",
+     "title_en": "DiffER$^2$: Diffusion Ensembles for Retrosynthesis Prediction with SMILES Adapted Particle Guidance",
+     "authors": "Sean Current, Daniel Adu-Ampratwum, Xia Ning, Srinivasan Parthasarathy",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.33557v1",
+     "pdf": "https://arxiv.org/pdf/2611.33557v1",
+     "text_type": "introduction",
+     "intro_zh": "逆合成（retrosynthesis）的目标是构建可用于合成目标产物的反应物分子。逆合成预测是药物制造流程中的关键步骤。对给定问题反复应用单步逆合成模型，可以实现完整合成路径的发现（Segler et al., 2018; Shen et al., 2021），从而进一步支持新药物模态的制药进展。然而，即使是单步逆合成预测也十分困难，部分原因在于可能映射到单一产物的反应物集合具有多样性。正向合成预测主要被视为一种具有确定性输出的满射过程，而逆合成预测在许多方面恰恰相反，单一输入可能产生多种可能的输出。因此，研究人员对深度学习方法产生了特别的兴趣，这些方法通过从给定产物分子快速高效地预测多个可能的反应物集合，加速逆合成发现过程。目前已开发出众多方法，从使用挖掘的反应机理来预测反应物的基于模板（template-based）的方法，到直接预测以目标产物为条件的反应物分子字符串或图表示的免模板（template-free）方法。这些免模板方法中最成功的方法在分子的 SMILES（Weininger, 1988）字符串表示上使用传统的 transformer 编码器-解码器架构，有效地将问题视为一个 Preprint. Under review. arXiv:2611.33557v1 [cs.LG] 25 Nov 2026 Figure 1: Overview of the DiffER2 ensemble. The DiffER2 ensemble contains both continuous-time (C-DiffER) and discrete-time (DiffER) models to leverage differing capabilities between the two diffusion archetypes. Both normal sampling methods and SMILES adapted particle guidance are used to generate output. Output SMILES are ranked according to frequency of the canonical form. DiffERκ indicates the value of κ as described in Section 3.2. 机器翻译任务（Zhong et al., 2022）。最近的一种方法 DiffER（Current et al., 2024）探索了离散扩散模型（discrete diffusion models）在逆合成任务中的使用，并提供了证据表明离散时间扩散模型的集成（ensemble）可以是从反应物后验分布（posterior distribution）中采样的实用方法。DiffER 在常用的 USPTO-50k 数据集（Lowe, 2017）上的 top-1 准确率优于最先进的 R-SMILES（Zhong et al., 2022），但由于后验采样的性质，其输出多样性较低。在本工作中，我们扩展了 DiffER（Current et al., 2024）的工作，将其方法适配为包含连续时间离散扩散模型（continuous-time discrete diffusion models），并将基于分类器的粒子引导（classifier-based particle guidance）（Corso et al., 2023）应用于 SMILES 字符串生成。这两项改变均旨在提升模型相对于原始 DiffER 的效果和输出多样性。DiffER2 集成方法的可视化概览见图 1。对原始 DiffER 方法的主要改进如下：1. 我们将连续时间离散扩散模型纳入 DiffER 集成，以利用离散时间和连续时间扩散的不同能力。2. 我们探索了适配 SMILES 的引导机制的有效性，以进一步增强扩散模型在化学逆合成中的多样性和准确性。3. 最后，我们深入探索了自回归模型（auto-regressive models）和离散空间扩散模型在化学逆合成任务上的不同性能表现。通过将连续时间和离散时间扩散模型与基于分类器的粒子引导（Corso et al., 2023）相结合，我们显著提升了集成性能并减少了对后验峰的过采样（oversampling），同时全面维持或提升了 top-k 准确率。我们的结果增强了扩散集成在 SMILES 生成中的效果，同时提供了扩散方法与自回归方法在序列生成方面的性能实证分析。",
+     "related_nodes": [
+      30
+     ]
+    },
+    {
+     "title_zh": "模型是预测还是已知？基于时间知识图谱预言机评估大语言模型的新颖药物靶点优先级排序",
+     "title_en": "Did the Model Forecast It, or Already Know It? Evaluating Large Language Models for Novel Drug-Target Prioritisation with a Temporal Knowledge-Graph Oracle",
+     "authors": "Pui Chung Siu, Yuan Liang, Claudia Cabrera, Mani Mudaliar, Arkaitz Zubiaga",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.34247v1",
+     "pdf": "https://arxiv.org/pdf/2611.34247v1",
+     "text_type": "introduction",
+     "intro_zh": "大多数疾病仍然缺乏治疗手段：在人类疾病本体（Human Disease Ontology）收录的 11,158 种疾病中，仅有 612 种在任何地区拥有获批药物 [Gordillo-Marañón et al., 2024]，而约 5% 的罕见病拥有 FDA 获批药物 [Fermaglich and Miller, 2023]。治疗这些疾病需要针对每种疾病而言全新的靶点，然而研究却集中于已被充分研究的蛋白质 [Edwards et al., 2011, Kustatscher et al., 2022]。对于需求未被满足的疾病，选择哪个新靶点进行试验是一项代价高昂的决策。疗效不足是临床失败的主要原因，而将靶点与疾病关联起来的临床前证据薄弱则是一个主要促成因素 [Hingorani et al., 2019]。支持该关联的遗传学证据可将成功率提高 2.6 倍，其中提升最大的是检验疗效的 II 期和 III 期 [Minikel et al., 2024]。AI 平台 [Kamya et al., 2024] 以及越来越多的大语言模型（LLMs）被用于对这一决策中的候选靶点进行排序。∗通讯作者：Claudia Cabrera、Mani Mudaliar 和 Arkaitz Zubiaga。第 40 届神经信息处理系统大会（NeurIPS 2026）。研讨会：AI for Drug Discovery: Bridging the Translation Gap。arXiv:2611.34247v1 [cs.AI] 25 Nov 2026 图 1：概览。对于查询年份为 Y 的靶点–疾病对，我们从带日期的知识图谱中检索证据路径，并提示语言模型对该对进行评分。上：年度图快照。检索 C = Y − 1 处的快照，排除被预测事件。下：相对于模型训练截止点的访问条件：无检索但带描述（A1）、带日期图（A2）和最新快照（A3）。TargetBench [Leung et al., 2026] 将前沿模型纳入其基准测试的靶点识别系统之中，Adaszewski and Schindler [2025] 则使用检索增强的 LLM 对阿尔茨海默病靶点进行排序。二者均针对已进入临床开发的靶点进行验证，而不考虑时间因素，而其他靶点排序模型则将训练数据或证据限制在某个截止日期之前，使其无法通过回忆已知关联来进行评分 [Narganes-Carlón et al., 2023, 2024, Patel et al., 2025, Ofer and Linial, 2025]。良好的科学推理本身并不能造就良好的预测 [Wu et al., 2026]，且尚无人检验 LLMs 能否从决策时可获得的证据推理出接下来将进入临床开发的新颖靶点–疾病假设。模型的训练截止点提供了一种时间锚定的检验，因为截止点之后的事件不存在于其训练数据中 [Wu et al., 2026, Dai et al., 2025]。相关证据的检索使这一检验变得复杂：检索可以提高准确率 [Wu et al., 2026, Dai et al., 2025]，但它也可能将截止点之后的证据重新引入。因此，我们针对每个模型自身的训练截止点对其进行评分，分别在有无检索的条件下进行，并使用带日期的图将决策时可获得的证据与决策之后才出现的证据区分开来。我们在 THBKG [Siu et al., 2026] 上运行这一检验，这是一个可回退到任意决策时间点的时间生物医学知识图谱。对于每个靶点–疾病对，我们从该时间点的图状态中检索多跳路径，并让一个开放权重 LLM 对该对进行评分（图 1）。一系列访问条件（§2）每次增加一个信息源，从模型的参数化知识，到带日期的图，再到最新的图，从而将性能分解为参数化知识、决策时证据和决策后证据的贡献。本文贡献了一个用于新颖靶点优先排序的决策时评估框架，该框架针对每个模型自身的训练截止点进行评分，并将标签、检索到的图证据和负样本限定在决策时间点。2 应用于六个开放模型后，该框架表明，决策时知识仅能预测到与试验历史（即过往试验的计数）相当的水平：模型在训练截止点之后的任何分数下降至多为 0.035 AUROC，因此其中大部分反映的是合理性而非对试验的记忆，而决策之前日期的证据无论在截止点之前还是之后都贡献甚微。它还表明，来自最新图的增益是后见之明而非先见之明：模型明显高于试验历史，但图中的路径通常包含该对自身的试验，其日期在决策之后。2本版本为回应审稿意见而重新运行了评估。附录 A 列出了相对于审稿版本的变化。2 2 方法 数据。一个查询是一个疾病 d 和一个决策年份 Y ∈ {2021, . . . , 2026}，快照年份 C = Y − 1。正样本是其在 Open Targets clinical_precedence 通道 [release 26.03; Ochoa et al., 2023] 中针对 d 的首次试验落在 Y 年的靶点（一年期视野）；它们可能具有更早的关联证据，但没有针对 d 的更早试验。负样本按对抽取，不使用未来信息（时间感知负样本）：候选池为截至 C 年已在与 d 共享治疗领域的疾病上试验过的所有蛋白质编码靶点，减去截至 Y 年已针对 d 试验过的靶点，因此首次针对 d 试验发生在 Y 年之后的靶点仍为合格负样本。我们按每个正样本均匀采样十个负样本（候选池中位数 ≈ 1,050），得到 1,373 个查询和 6,394 个正样本（附录 C）；2026 年切片涵盖截至 5 月注册的试验。描述、治疗领域和本体来自无日期的 Open Targets 26.03 版本。检索与评分。我们从 THBKG [Siu et al., 2026] 检索，这是一个时间生物医学知识图谱，充当关于“何时已知什么”的预言机（oracle）：其 as-of 查询 G[T ] 返回日期早于 T 的子图，每条边携带关系类型和证据分数。对于每个候选，我们使用 K-Paths [Abdullahi et al., 2025] 提取到该疾病的 top 8 条多跳路径（≤ 3 跳）。我们对六个开放权重、指令微调模型进行评分：Llama 3.1-8B/70B（训练截止点 2023 年 12 月）和 Qwen 3-8B/32B 及 Gemma 2-9B/27B（2024 年 6 月；近似值）。我们询问每个模型：给定该对及其证据，该靶点是否将在 Y 年进入其针对该疾病的首次试验（附录 D）。我们按模型回答 Yes 而非 No 的概率对每个查询的候选进行排序（Eq. 1）。条件。遵循 CUSP 的 base/截止点前/全信息对比 [Wu et al., 2026]，我们仅改变伴随该对的内容（表 2），每步增加一个信息源：无检索的靶点和疾病描述（A1）；来自带日期图 G[C] 的无泄漏路径（A2）；以及最新快照（A3），这是一个全信息上限，对大多数正样本而言包含该对自身的试验边，即标签。用 CUSP 的术语来说，A2−A1 是知识差距，A3−A2 是预测差距。每个模型在每一年均针对其自身训练截止点进行评分，因此截止点前/后的对比是模型内的。每个正样本按构造对证据而言都是新颖的，因为其试验不存在于 G[C] 中。截止点后的正样本对模型而言也是新颖的，因为其首次试验的日期晚于其训练数据。评估。我们将每个条件与试验历史进行比较，后者是一个无模型基线，按候选截至 C 年已在 d 的治疗领域中试验过的疾病数量对每个候选进行排序（其他试验计数和遗传学证据见附录 E.1）。指标为每查询计算、在查询间平均：AUROC、平均精度（AP）和 MRR，95% CI 来自 2,000 次查询重采样；随机水平为 0.5 AUROC、约 0.22 AP 和 0.26 MRR。协议、数据统计和提示见附录 B–D。3 结果 3.1 具有决策时知识的模型仅能预测到与试验历史相当的水平 在无检索的情况下，模型已能显著高于随机水平进行排序，而这一参数化下限（而非零）才是任何检索增益必须超越的基准。该下限在 AUROC 和 AP 上与试验历史相当，在 MRR 上略高于后者（表 1）。其中很少来自提示中的描述：仅使用标识符（A0）时，模型得分几乎同样好（表 3）。在截止点之后，正样本对模型而言是新颖的，下限的任何下降至多为 0.035 A",
+     "related_nodes": [
+      1,
+      10
+     ]
+    },
+    {
+     "title_zh": "MolGPAO：带推测解码与亚毫秒接缝修复的分子生成式预训练自回归八叉树",
+     "title_en": "MolGPAO: Molecular Generative Pre-trained Autoregressive Octree with Speculative Decoding and Sub-Millisecond Seam Healing for 3D Molecules",
+     "authors": "Shangqian Chen, Guojiang Zhao, Zheng Cheng, Jiankun Wang, Hongshuai Wang et al.",
+     "source": "arXiv",
+     "url": "https://arxiv.org/abs/2611.33985v1",
+     "pdf": "https://arxiv.org/pdf/2611.33985v1",
+     "text_type": "introduction",
+     "intro_zh": "三维（3D）分子结构的从头生成（de novo generation）是结构导向药物发现[1–3]与功能性有机半导体设计[4, 5]的基础。当代3D分子生成架构分为两种范式，二者在计算与物理层面具有截然不同的权衡：1. 稠密迭代等变扩散与流匹配。仅坐标扩散模型（EDM [6]、GeoLDM [7]）在完整图上集成500–1,000步E(3)-等变消息传递，并在药物尺度分子上表现出严重的分子级价态不稳定性（在GEOM-Drugs上为0.2%–5.2%）。联合2D+3D扩散与连续时间马尔可夫链（CTMC）流匹配模型（MiDi [8]、EQGAT-diff [9]、FlowMol [2]、SemlaFlow [3]、PropMolFlow [5]）在100–500步内显式地协同演化所有N(N−1)/2个成对键状态与3D坐标。虽然显式边演化恢复了化学有效性，但在每个积分步上物化稠密O(N²)成对张量，导致从N = 30到N = 100个显式原子时延迟急剧增长，并需要数十到数百GPU小时的训练（52–156 GPU-h [5]）。2. 稀疏分层3D八叉树自回归。Uni-3DAR [10]以广度优先的Morton（Z曲线）顺序，从粗粒度立方根（Lmax ∈ {6, 7}，盒边长15.36–30.72 Å）递归细分3D空间，直至0.24 Å叶体素（ℓ = 0），仅发射非空空间八分区（O(N logN)个token），随后通过单遍因果KV缓存解码发射化学元素Zi与量化的0.01 Å亚体素偏移（∆xi, ∆yi, ∆zi）。尽管具有O(N logN)复杂度，将原始八叉树自回归部署于药物尺度分子（GEOM-Drugs，高达140+原子）以及多性质或大骨架量子设计（QM9、OE62）时，暴露出三个基础性瓶颈——尤其是在严格禁止外部性质代理模型或推理时MLIP弛豫的情况下：• 病理1：Morton缝坐标跳变与未成键两性离子脆弱性。当两个共价成键原子跨越八叉树分割平面时，其亚体素坐标在因果Morton序列中被解码到相距很远的位置，且没有显式成对键弹簧。0.04–0.08 Å的跨缝错位触发严重的零步原子力尖峰（在DPA-4 [11]下第90百分位Fmax > 17–22 eV/Å），并导致事后基于距离的键感知（RDKit DetermineBonds [12]）在12%–32%的结构上虚构出虚假两性离子（[C-]...[O+]、三价氧鎓、卤鎓）。• 病理2：叶节点密集型计算分配与粗粒度整数计数陷阱。粗粒度八叉树分裂（ℓ≥1）消耗< 30%的自回归FLOPs，而ℓ = 0叶原子与3轴0.01 Å坐标头消耗> 70%。朴素的叶级采样浪费> 70%的GPU计算去完成拓扑紧张或偏离目标的粗包络，而以刚性整数剩余原子配额为条件进行八分区分裂会困住大骨架（N≥ 45）。• 病理3：自包含评判器中的目标捷径坍缩与同步气泡。为了在不查询外部性质预测器的情况下内部剪枝八叉树分支，内部评判器必须直接从部分八叉树与3D点云推断量子性质，且仅基于数据集真值标签训练。对教师强制对（Mi, ti = yi）的朴素监督会遭受灾难性的捷径坍缩到目标提示ti、无分类器引导（CFG）[13]下的隐藏状态偏移，以及共价键级的粗径向模糊。同时，Python驱动的八叉树队列每批次产生> 200次GPU–CPU同步停顿。在本文中，我们提出MolGPAO（Molecular Generative Pre-trained Autoregressive Octree），这是Uni-3DAR的独立架构与推测式树解码升级，每个提示生成一个分子（Mout ≡ 1），使用零外部代理模型、零强化学习、零训练时或推理时MLIP调用。严格遵循完整SO(3)等变增强（零PCA帧规范化）与零Natoms泄漏到强度性质条件化，MolGPAO引入五项协同创新：2 MolGPAO molgpao v1.0 分子生成式预训练自回归八叉树与缝愈合 单输出O(N log N) 3D生成，零外部代理、零RL、零推理MLIP 尺度预算 打包先验6-D预算 + L5→L1先验 阶段1漏斗 粗剪枝 暂停-收集 m_s1 → m_s2 叶解码 步长2叶 选择性CFG + 0.01 Å XYZ 缝愈合 SE(3)精修器 <0.5 ms Kabsch + 0.00 Å H 阶段2评判器 单输出 64-RBF多极 → M_out = 1 无气泡FlashAttention-2引擎与组合定律 连续漏斗 m_s1(K, N) → m_s2(K, N) → 1 释放75%–80% KV VRAM 掩码散射粗写入 + 步长2切片削减>95%同步停顿 零代理真值后训练（< 0.56 GPU-h） 对比组目标解耦（G = 8, h_gate = 0）阻断捷径 合成Morton缝蒸馏 + 期望XYZ 1–2/1–3键损失 动态KV + FA-2 缝蒸馏 + G=8对比 将GEOM-Drugs有效连通产率提升6.78倍（12.7% → 86.2%），并以比FlowMol快达7.3倍的速度解码N = 100骨架。在92.8倍更低计算量下，将实时PBE0/def2-TZVP OE62量子命中产率相较52 GPU-h PropMolFlow翻倍（33.3% vs. 16.7%）。图1：MolGPAO推测式八叉树架构与亚毫秒缝愈合引擎概览。五阶段前向主干将非陷阱6-D无尺度预算调制与L5 → L1有机堆积先验，与阶段1暂停-收集粗八叉树剪枝（ms1(K, ˆN) → ms2(K, ˆN)，释放75%–80% KV VRAM）、选择性CFG下的无气泡步长2叶解码、< 0.5 ms SE(3) PostTreeGraphRefiner Morton缝愈合加零重原子位移H协调，以及抗捷径64-RBF多极阶段2评判器耦合，严格每个提示发射一个分子（Mout ≡ 1），零外部代理、零RL、零推理MLIP调用。1. 无尺度非陷阱预算调制与分层堆积先验（第2.1节）：零初始化6-D连续全局尺度嵌入配以经验L5→L1有机堆积先验，平滑扩展N = 16–140骨架而无八分区计数陷阱或广延尺寸泄漏；2. 单输出推测式八叉树解码与组合缩放定律（第2.2节）：向量化FlashAttention-2 [14]暂停-收集KV漏斗ms1(K, ˆN) → ms2(K, ˆN) → 1，由跨搜索层级K ∈ {1, 2, 4, 8, 12, 16}的连续尺寸-复杂度定律支配；3. 抗捷径真值TwoStageOctreeProcessCritic（第2.3节）：纯3D几何对比组监督（pdecouple = 0.50）、64-RBF共价连续滤波边门控（γ = 42.0 Å⁻²），以及精确SO(3)-不变12通道等变多极范数，仅基于数据集真值标签训练；4. 亚毫秒Kabsch PostTreeGraphRefiner与选择性CFG对齐（第2.4节）：在阶段2评判器评分之前应用< 0.5 ms 4层SE(3)缝愈合精修器，配以可微期望XYZ 1–2/1–3成键距离SFT、冻结XYZ选择性logit-CFG，以及零重原子位移价态协调；5. 无气泡步长2 GPU解码与动态VRAM调度（第2.5节）：消除> 95%的CUDA主机-设备同步停顿，同时使KV缓冲区随目标原子预算紧密缩放。3 2 MolGPAO架构与推测式引擎 2.1 无尺度全局预算调制与分层体积守恒 设根合并层级Lmax ∈ {6, 7}（0.24 Å叶体素宽度）的八叉树表示3D分子M = {(Zi, ri)}N i=1。标准整数根计数预测将早期粗八分区提交给硬原子配额，导致小分子上的空间碰撞或N ≥ 50骨架上的过早终止，而将N拼接到性质条件器中会将内在强度电子可观测量（如εHOMO或µ）与广延分子尺寸混为一谈。MolGPAO通过两种机制将广延尺寸控制与性质条件化解耦：1. 非陷阱6-D尺度",
+     "related_nodes": [
+      23
+     ]
+    }
+   ]
+  },
+  {
    "date": "2026-11-26",
    "papers": [
     {
@@ -822,5 +867,5 @@
    ]
   }
  ],
- "updated": "2026-11-26 13:29"
+ "updated": "2026-11-27 13:22"
 }
